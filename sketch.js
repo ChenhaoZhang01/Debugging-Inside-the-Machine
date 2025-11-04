@@ -15,7 +15,7 @@
  *   - Shows Nodes Fixed, Nodes Attempted, Accuracy, % Stabilized, Rank
  * - Custom code font loaded from assets (monospace look)
  */
-
+window._p5play_gtagged = false;
 let player, groundSensor, grass, platforms, coins, enemies, lwall, rwall;
 let grassImg, coinsImg, charactersImg, brickImg;
 let codeFont; // custom code-looking font
@@ -218,6 +218,9 @@ function getTilemapForDifficulty(diff) {
 }
 
 new Q5();
+world.autoStep = true; // keeps physics running normally
+world.debug = false;   // ensures no debug overlays appear
+
 
 new Canvas(2000, 1600);
 displayMode('maxed', 'pixelated');
