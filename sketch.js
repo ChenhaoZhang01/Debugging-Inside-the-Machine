@@ -57,6 +57,12 @@ let currentCorrectAnswerNumber = 1; // 1–4
 
 let questionsLoaded = false; // set true once files are fetched+parsed
 
+// Code Lens answer/review state
+let codeLensAnswered = false;        // has the player already chosen an answer?
+let codeLensWasCorrect = false;      // was their choice correct?
+let codeLensPlayerChoice = null;     // 1–4: which option they chose
+let pendingStateAfterCodeLens = null; // 'play', 'win', or 'gameOver'
+
 // -------------------------
 // Text wrapping utility
 // -------------------------
@@ -165,10 +171,8 @@ function prepareQuestionForCurrentDifficulty() {
 
   let index;
   if (available.length > 0) {
-    // random(array) returns a random element from the array
-    index = random(available); // unused question index
+    index = random(available);
   } else {
-    // all used, allow reuse
     index = floor(random(bank.length));
   }
 
@@ -179,17 +183,15 @@ function prepareQuestionForCurrentDifficulty() {
   const idxs = [0, 1, 2, 3];
   const shuffled = shuffle(idxs);
 
-  // Build shuffled answer texts
   currentShuffledAnswers = shuffled.map(i => currentQuestion.choices[i]);
 
-  // Compute which key (1–4) is correct after shuffle
   const safeCorrectIndex = constrain(
     currentQuestion.correctIndex,
     0,
     currentQuestion.choices.length - 1
   );
   const posInShuffled = shuffled.indexOf(safeCorrectIndex);
-  currentCorrectAnswerNumber = posInShuffled + 1; // map 0–3 -> 1–4
+  currentCorrectAnswerNumber = posInShuffled + 1; // 0–3 -> 1–4
 }
 
 function markCurrentQuestionUsed() {
@@ -449,7 +451,6 @@ function drawMatrixBackground() {
 // -------------------------
 // CRT overlay
 // -------------------------
-
 function initCRTOverlay() {
   crtOverlayG = createGraphics(canvas.w, canvas.h);
   crtOverlayG.clear();
@@ -457,7 +458,7 @@ function initCRTOverlay() {
 
   // Soft scanlines
   for (let y = 0; y < crtOverlayG.height; y += 2) {
-    crtOverlayG.fill(0, 0, 0, 10); // less alpha than before
+    crtOverlayG.fill(0, 0, 0, 10);
     crtOverlayG.rect(0, y, crtOverlayG.width, 1);
   }
 
@@ -479,19 +480,17 @@ function drawCRTOverlay() {
   resetMatrix();
   noStroke();
 
-  // a few random noise specks each frame
   for (let i = 0; i < 80; i++) {
     let x = random(canvas.w);
     let y = random(canvas.h);
     let w = random(1, 3);
     let h = random(1, 3);
-    fill(255, random(200, 255), 255, random(20, 60)); // green-ish specks
+    fill(255, random(200, 255), 255, random(20, 60));
     rect(x, y, w, h);
   }
 
   pop();
 }
-
 
 // -------------------------
 // Setup
@@ -689,6 +688,12 @@ function update() {
     ) {
       prepareQuestionForCurrentDifficulty();
       if (currentQuestion) {
+        // reset Code Lens state each time we enter
+        codeLensAnswered = false;
+        codeLensWasCorrect = false;
+        codeLensPlayerChoice = null;
+        pendingStateAfterCodeLens = null;
+
         gameState = 'paused';
         world.active = false;
         allSprites.forEach(s => {
@@ -697,74 +702,88 @@ function update() {
       }
     }
   } else if (gameState === 'paused') {
-    let choice = null;
-    if (kb.presses('1')) choice = 1;
-    else if (kb.presses('2')) choice = 2;
-    else if (kb.presses('3')) choice = 3;
-    else if (kb.presses('4')) choice = 4;
+    // Phase 1: pick an answer 1–4
+    if (!codeLensAnswered) {
+      let choice = null;
+      if (kb.presses('1')) choice = 1;
+      else if (kb.presses('2')) choice = 2;
+      else if (kb.presses('3')) choice = 3;
+      else if (kb.presses('4')) choice = 4;
 
-    if (choice !== null) {
-      if (nearestCoin && currentQuestion) {
-        nodesAttempted++;
+      if (choice !== null) {
+        if (nearestCoin && currentQuestion) {
+          codeLensAnswered = true;
+          codeLensPlayerChoice = choice;
+          codeLensWasCorrect = (choice === currentCorrectAnswerNumber);
+          pendingStateAfterCodeLens = 'play';
 
-        if (choice === currentCorrectAnswerNumber) {
-          const coinX = nearestCoin.x;
-          const coinY = nearestCoin.y;
-          nearestCoin.remove();
-          new grass.Sprite(coinX, coinY);
+          nodesAttempted++;
 
-          systemStability += 5;
-          if (systemStability > 100) systemStability = 100;
+          if (codeLensWasCorrect) {
+            // CORRECT: apply effects now but stay on screen
+            const coinX = nearestCoin.x;
+            const coinY = nearestCoin.y;
+            nearestCoin.remove();
+            new grass.Sprite(coinX, coinY);
 
-          score++;
-          markCurrentQuestionUsed();
-          nearestCoin = null;
+            systemStability += 5;
+            if (systemStability > 100) systemStability = 100;
 
-          // clear current question state
-          currentQuestion = null;
-          currentQuestionIndex = -1;
-          currentShuffledAnswers = [];
-          currentCorrectAnswerNumber = 1;
+            score++;
+            markCurrentQuestionUsed();
+            nearestCoin = null;
 
-          if (score >= totalNodes) {
-            triggerWin();
+            if (score >= totalNodes) {
+              pendingStateAfterCodeLens = 'win';
+            }
           } else {
-            gameState = 'play';
-            world.active = true;
-            allSprites.forEach(s => {
-              if (s.ani) s.ani.play();
-            });
+            // INCORRECT: apply damage now but stay on screen
+            systemStability -= 10;
+            if (systemStability < 0) systemStability = 0;
+            damageFlashTimer = 300;
+
+            nearestCoin = null;
+
+            if (systemStability <= 0) {
+              pendingStateAfterCodeLens = 'gameOver';
+            }
           }
         } else {
-          systemStability -= 10;
-          if (systemStability < 0) systemStability = 0;
-          damageFlashTimer = 300;
-
-          // clear question so next Code Lens gets a fresh one
-          currentQuestion = null;
-          currentQuestionIndex = -1;
-          currentShuffledAnswers = [];
-          currentCorrectAnswerNumber = 1;
-
-          if (systemStability <= 0) {
-            triggerGameOver();
-            nearestCoin = null;
-            return;
-          }
-
-          nearestCoin = null;
+          // No coin / no question, just resume
           gameState = 'play';
           world.active = true;
           allSprites.forEach(s => {
             if (s.ani) s.ani.play();
           });
         }
-      } else {
-        gameState = 'play';
-        world.active = true;
-        allSprites.forEach(s => {
-          if (s.ani) s.ani.play();
-        });
+      }
+    } else {
+      // Phase 2: already answered, wait for SPACE to continue
+      if (kb.presses('space')) {
+        // Clear question state
+        currentQuestion = null;
+        currentQuestionIndex = -1;
+        currentShuffledAnswers = [];
+        currentCorrectAnswerNumber = 1;
+
+        codeLensAnswered = false;
+        codeLensWasCorrect = false;
+        codeLensPlayerChoice = null;
+
+        if (pendingStateAfterCodeLens === 'win') {
+          pendingStateAfterCodeLens = null;
+          triggerWin();
+        } else if (pendingStateAfterCodeLens === 'gameOver') {
+          pendingStateAfterCodeLens = null;
+          triggerGameOver();
+        } else {
+          pendingStateAfterCodeLens = null;
+          gameState = 'play';
+          world.active = true;
+          allSprites.forEach(s => {
+            if (s.ani) s.ani.play();
+          });
+        }
       }
     }
   } else if (gameState === 'gameOver' || gameState === 'win') {
@@ -1136,13 +1155,10 @@ function update() {
 
       textAlign(LEFT, TOP);
 
-      // -------------------------
       // QUESTION AT THE TOP
-      // -------------------------
       textSize(60);
-      fill(0, 255, 0); // question text color
+      fill(0, 255, 0);
 
-      // Do NOT mutate the stored prompt; use a cleaned local copy
       const promptText = currentQuestion.prompt.replace(/^.*?:\s*/, '');
 
       let promptBottomY = drawWrappedText(
@@ -1153,31 +1169,26 @@ function update() {
         1.4
       );
 
-      // -------------------------
       // TWO COLUMNS UNDER PROMPT
-      // left: code    right: choices
-      // -------------------------
-      const gutter = 40; // space between columns
+      const gutter = 40;
       const columnTopY = promptBottomY + 40;
       const columnWidth = (textBoxWidth - gutter) / 2;
 
-      const codeX = qX;                       // left column
-      const choicesX = qX + columnWidth + gutter; // right column
+      const codeX = qX;
+      const choicesX = qX + columnWidth + gutter;
 
-      // -------------------------
       // CODE BLOCK (LEFT COLUMN)
-      // -------------------------
       textSize(32);
-      fill(200, 255, 200); // code text color
+      fill(200, 255, 200);
 
       const codeLines = currentQuestion.code.split('\n');
       let codeY = columnTopY;
       let indentLevel = 0;
-      const indentSize = 40; // pixels per indent
+      const indentSize = 40;
       const baseX = codeX + 40;
 
       for (let i = 0; i < codeLines.length; i++) {
-        let line = codeLines[i].trim(); // remove leading/trailing spaces
+        let line = codeLines[i].trim();
 
         if (line.startsWith('}')) {
           indentLevel = Math.max(0, indentLevel - 1);
@@ -1196,11 +1207,8 @@ function update() {
 
       const codeBottomY = codeY;
 
-      // -------------------------
       // ANSWER CHOICES (RIGHT COLUMN)
-      // -------------------------
       textSize(40);
-      fill(255); // answer text color
 
       const labels = ['1', '2', '3', '4'];
       let choicesY = columnTopY;
@@ -1214,29 +1222,57 @@ function update() {
         const label = labels[i] || (i + 1) + '.';
         const optionText = label + '. ' + answersToShow[i];
 
+        const optionNumber = i + 1;
+        const isCorrect = (optionNumber === currentCorrectAnswerNumber);
+        const isPlayerChoice = (codeLensPlayerChoice === optionNumber);
+
+        // Color based on correctness / choice once answered
+        if (codeLensAnswered) {
+          if (isCorrect) {
+            fill(0, 255, 0); // green for correct
+          } else if (isPlayerChoice && !isCorrect) {
+            fill(255, 80, 80); // red for wrong chosen answer
+          } else {
+            fill(180); // dim others
+          }
+        } else {
+          fill(255); // before answering
+        }
+
+        const choiceTopY = choicesY;
         choicesY = drawWrappedText(optionText, choicesX, choicesY, columnWidth, 1.4);
-        choicesY += 50; // spacing between choices
+        choicesY += 50;
+
+        // Strikethrough for incorrect chosen answer
+        if (codeLensAnswered && isPlayerChoice && !isCorrect) {
+          stroke(255, 80, 80);
+          strokeWeight(3);
+          const lh = textSize() * 1.4;
+          const midY = choiceTopY + lh * 0.5;
+          line(choicesX, midY, choicesX + columnWidth, midY);
+          noStroke();
+        }
       }
 
       const choicesBottomY = choicesY;
-
       const contentBottomY = Math.max(codeBottomY, choicesBottomY);
 
-      // -------------------------
-      // HINT SECTION (bottom area)
-      // -------------------------
+      // HINT SECTION
       fill(200);
       textSize(30);
       const hintY = overlayY + overlayH - 80;
 
+      const hintText = codeLensAnswered
+        ? "Press SPACE to continue."
+        : "Press 1, 2, 3, or 4 to choose your fix.";
+
       drawWrappedText(
-        "Press 1, 2, 3, or 4 to choose your fix.",
+        hintText,
         qX,
         hintY,
         textBoxWidth,
         1.2
       );
-
     } else {
       // If questions not ready but somehow paused
       fill(200);
