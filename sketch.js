@@ -14,7 +14,7 @@ let showCodeLensButton = false;
 let stabilityTimer = 0;
 const stabilityInterval = 1000;
 let nearestCoin = null;
-const ROAM_SPEED = 1.5;
+let ROAM_SPEED = 1.5;
 
 let gameState = 'start'; // 'start', 'directions', 'play', 'paused', 'gameOver', 'win'
 let currentDifficulty = 'hard'; // 'easy', 'medium', 'hard'
@@ -37,6 +37,11 @@ let demoCoinFrame = 0;
 let demoCoinFrameTimer = 0;
 const demoCoinFrameDelay = 80;
 
+// Directions demo virus animation
+let demoEnemyFrame = 0;
+let demoEnemyFrameTimer = 0;
+const demoEnemyFrameDelay = 160;
+
 // Matrix background + CRT overlay
 let matrixBG;
 let matrixScrollY = 0;
@@ -46,9 +51,10 @@ let crtOverlayG;
 let easyLines = [];
 let mediumLines = [];
 let hardLines = [];
+let secretLines = [];
 
-let questionBanks = { easy: [], medium: [], hard: [] };
-let usedQuestionIndices = { easy: [], medium: [], hard: [] };
+let questionBanks = { easy: [], medium: [], hard: [], secret: [] };
+let usedQuestionIndices = { easy: [], medium: [], hard: [], secret: [] };
 
 let currentQuestion = null;
 let currentQuestionIndex = -1;
@@ -122,31 +128,36 @@ function parseQuestionLines(lines) {
 // -------------------------
 async function loadQuestionFiles() {
   try {
-    const [easyRes, medRes, hardRes] = await Promise.all([
+    const [easyRes, medRes, hardRes, secretRes] = await Promise.all([
       fetch('easy.txt'),
       fetch('medium.txt'),
-      fetch('hard.txt')
+      fetch('hard.txt'),
+      fetch('secret.txt')
     ]);
 
-    const [easyText, medText, hardText] = await Promise.all([
+    const [easyText, medText, hardText, secretText] = await Promise.all([
       easyRes.text(),
       medRes.text(),
-      hardRes.text()
+      hardRes.text(),
+      secretRes.text()
     ]);
 
     easyLines = easyText.split('\n');
     mediumLines = medText.split('\n');
     hardLines = hardText.split('\n');
+    secretLines = secretText.split('\n');
 
     questionBanks.easy = parseQuestionLines(easyLines);
     questionBanks.medium = parseQuestionLines(mediumLines);
     questionBanks.hard = parseQuestionLines(hardLines);
+    questionBanks.secret = parseQuestionLines(secretLines);
 
     questionsLoaded = true;
     console.log('Questions loaded:', {
       easy: questionBanks.easy.length,
       medium: questionBanks.medium.length,
-      hard: questionBanks.hard.length
+      hard: questionBanks.hard.length,
+      secret: questionBanks.secret.length
     });
   } catch (err) {
     console.error('Failed to load question files:', err);
@@ -206,51 +217,54 @@ function markCurrentQuestionUsed() {
 // Tilemaps per difficulty
 // -------------------------
 const tilemapEasy = [
-  'lggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg',
-  'l                                                            r',
-  'l     c                                                      r',
-  'l                                                            r',
-  'l                                                       c    r',
-  'l                                       c                    r',
-  'l        ppp                                                 r',
-  'l                                                            r',
-  'l                                                            r',
-  'l              p                ppppp            e           r',
-  'l                                                    c       r',
-  'l                 e                                          r',
-  'l                ppp                                         r',
-  'l                      c                                     r',
-  'gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg',
+  'ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg',
+  'l                                                             r',
+  'l                                                             r',
+  'l                                                             r',
+  'l                                                             r',
+  'l     c                              e                        r',
+  'l                                                             r',
+  'l                                       c               c     r',
+  'l        e                                  e                 r',
+  'l        ppp                                                  r',
+  'l                                                             r',
+  'l                                                             r',
+  'l             ce                ppppp             e           r',
+  'l                                                    c        r',
+  'l                                                             r',
+  'l                ppp                                          r',
+  'l                                                             r',
+  'ggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg',
 ];
 
 const tilemapMedium = [
-  'lggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg',
+  'gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg',
   'l             c                                              r',
   'l                                                            r',
   'l                                                            r',
-  'l                   ppp                                      r',
-  'l                                               c            r',
+  'l                   eppp       c                             r',
+  'l                                               ce           r',
   'l                                       e                    r',
-  'l           ppp                        ppp                   r',
+  'l          eppp                        ppp                   r',
   'l          c                                                 r',
   'l                                                            r',
-  'l                         ppp                                r',
+  'l                       e ppp e                              r',
   'l                                    c                       r',
   'l      e                                                     r',
   'l     ppp                                             c      r',
-  'l                              ppp                           r',
+  'l                              ppp          e                r',
   'l                           c                                r',
-  'l                    e                      c                r',
+  'l                    e                           pe          r',
   'l          c        ppp                                      r',
+  'l                                          c                 r',
   'l                                                            r',
+  'l              pcp                                           r',
   'l                                                            r',
-  'l              pppc                                          r',
-  'l                                    c                       r',
   'gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg',
 ];
 
 const tilemapHard = [
-  'lggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg',
+  'gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg',
   'l                                                            r',
   'l                                                            r',
   'l                                                           cr',
@@ -306,6 +320,7 @@ const tilemapHard = [
 ];
 
 function getTilemapForDifficulty(diff) {
+  if(diff === 'secret') return tilemapEasy;
   if (diff === 'easy') return tilemapEasy;
   if (diff === 'medium') return tilemapMedium;
   return tilemapHard;
@@ -522,13 +537,15 @@ function setup() {
   lwall.layer = 0;
   lwall.img = grassImg;
   lwall.rotation = 90;
+  lwall.scale = 1.75;
   lwall.tile = 'l';
 
   rwall = new Group();
   rwall.physics = 'static';
   rwall.layer = 0;
   rwall.img = grassImg;
-  rwall.rotation = 90;
+  rwall.rotation = 270;
+  rwall.scale = 1.75;
   rwall.tile = 'r';
 
   coins = new Group();
@@ -536,15 +553,22 @@ function setup() {
   coins.spriteSheet = coinsImg;
   coins.addAni({ w: 16, h: 16, row: 0, frames: 14 });
   coins.tile = 'c';
+  coins.layer = 0;
 
   enemies = new Group();
-  enemies.physics = 'static';
-  enemies.img = brickImg;
-  enemies.w = 16;
-  enemies.h = 16;
+  // enemies.physics = 'static';
+  enemies.spriteSheet = brickImg;
+  enemies.anis.w = 16;
+  enemies.anis.h = 16;
   enemies.rotationLock = true;
   enemies.layer = 1;
   enemies.tile = 'e';
+  enemies.collider = 'cirlce';
+  enemies.collider.radius = 8;
+  // enemies.collider.w = 60;
+  // enemies.collider.h = 60;
+  enemies.anis.frameDelay = 16;
+  enemies.addAni({ w: 16, h: 16, row: 0, frames: 4 });
 
   buildWorldFromTilemap(getTilemapForDifficulty(currentDifficulty));
 
@@ -621,7 +645,8 @@ function touchCoinDamage(player, coin) {
 }
 
 function hitEnemy(player, enemy) {
-  enemy.remove();
+  // enemy.remove();
+
   systemStability -= 10;
   if (systemStability < 0) systemStability = 0;
 
@@ -660,6 +685,7 @@ function update() {
     if (kb.presses('1')) setDifficulty('easy');
     if (kb.presses('2')) setDifficulty('medium');
     if (kb.presses('3')) setDifficulty('hard');
+    if (kb.presses('p') || kb.presses('q')) setDifficulty('secret');
 
     if (kb.presses('enter')) {
       gameState = 'play';
@@ -680,6 +706,12 @@ function update() {
       demoCoinFrame = (demoCoinFrame + 1) % 14;
       demoCoinFrameTimer = 0;
     }
+    demoEnemyFrameTimer += deltaTime;
+    if (demoEnemyFrameTimer >= demoEnemyFrameDelay) {
+      demoEnemyFrame = (demoEnemyFrame + 1) % 3;
+      demoEnemyFrameTimer = 0;
+    }
+    
   } else if (gameState === 'play') {
     if (
       kb.presses('c') &&
@@ -808,10 +840,12 @@ function update() {
         triggerGameOver();
       }
     }
-
+    if(currentDifficulty=='easy' || currentDifficulty == 'secret') ROAM_SPEED = 1;
+    if(currentDifficulty=='medium') ROAM_SPEED = 1.5;
+    if(currentDifficulty=='hard') ROAM_SPEED = 2;
     for (let en of enemies) {
       const radius = 50;
-      const speed = ROAM_SPEED / 1.5;
+      const speed = ROAM_SPEED /1.5;
       en.angle += speed;
       en.x = en.spawnX + cos(en.angle) * radius;
       en.y = en.spawnY + sin(en.angle) * radius;
@@ -918,6 +952,7 @@ function update() {
     if(currentDifficulty=="easy") fill(0,255,0);
     if(currentDifficulty=="medium") fill(255,255,0);
     if(currentDifficulty=="hard") fill(255,0,0);
+    if(currentDifficulty=="secret") fill(255,20,147);
 
     text(
       "Difficulty: " + currentDifficulty.toUpperCase(),
@@ -937,7 +972,7 @@ function update() {
       canvas.h / 2 + 275
     );
      text(
-      "3 - Hard | functions & lists",
+      "3 - Hard | Functions & Lists",
       canvas.w / 2,
       canvas.h / 2 + 325
     );
@@ -1007,6 +1042,7 @@ function update() {
 
     const glitchX = centerX - iconSpacing / 2;
     const sx = demoCoinFrame * 16;
+    const sx2 = demoEnemyFrame * 16;
     const sy = 0;
     const sw = 16;
     const sh = 16;
@@ -1020,7 +1056,7 @@ function update() {
     drawWrappedText("GLITCH", glitchX - 290, iconY + iconSize / 2 + 10, 140);
 
     const virusX = centerX + iconSpacing / 2;
-    image(brickImg, virusX + 250, iconY + 40, iconSize, iconSize);
+    image(brickImg, virusX + 250, iconY + 40, iconSize, iconSize, sx2, sy, sw, sh);
 
     fill(255, 80, 80);
     textSize(40);
