@@ -1121,15 +1121,50 @@ function update() {
       let nextY = drawWrappedText(currentQuestion.prompt, qX, qY, textBoxWidth, 1.4);
 
       // Code block in different style
-      textSize(36);
+      textSize(34);
       fill(200, 255, 200);
-      textStyle(ITALIC);
-      nextY = drawWrappedText(currentQuestion.code, qX, nextY + 10, textBoxWidth, 1.3);
+      // textStyle(ITALIC);
+
+      // currentQuestion.code = currentQuestion.code.replace(/\n/g, '<br>');
+      const codeLines = currentQuestion.code.split('\n');
+      let y = nextY + 50;
+      let indentLevel = 0;
+      const indentSize = 40; // pixels per indent
+      const baseX = qX + 150;
+
+      for (let i = 0; i < codeLines.length; i++) {
+        let line = codeLines[i].trim(); // remove leading/trailing spaces
+
+        // --- Adjust indentation rules ---
+
+        // If current line starts with '}', reduce indent first
+        if (line.startsWith('}')) {
+          indentLevel = Math.max(0, indentLevel - 1);
+        }
+
+        // Compute x offset based on current indent level
+        const x = baseX + indentLevel * indentSize;
+
+        // Draw the line
+        y = drawWrappedText(line, x, y, textBoxWidth, 1.8);
+
+        // If this line ends with '{', increase indent for the next line
+        if (line.endsWith('{')) {
+          indentLevel++;
+        }
+      }
+
+      // Update nextY if needed
+      nextY = y;
+
+
+
+      //nextY = drawWrappedText(currentQuestion.code, qX+150, nextY + 150, textBoxWidth, 1.3);
       textStyle(NORMAL);
       fill(50, 205, 50);
 
       textSize(38);
-      nextY += 300;
+      nextY += 50;
       for (let i = 0; i < currentShuffledAnswers.length; i++) {
         const label = (i + 1) + ") " + currentShuffledAnswers[i];
         nextY = drawWrappedText(label, qX, nextY + 10, textBoxWidth, 1.3);
