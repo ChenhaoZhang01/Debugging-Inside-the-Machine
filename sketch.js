@@ -210,16 +210,16 @@ const tilemapEasy = [
   'l                                                            r',
   'l     c                                                      r',
   'l                                                            r',
-  'l                                                            r',
+  'l                                                       c    r',
   'l                                       c                    r',
   'l        ppp                                                 r',
   'l                                                            r',
   'l                                                            r',
-  'l              p                ppppp                        r',
-  'l                                                            r',
+  'l              p                ppppp            e           r',
+  'l                                                    c       r',
   'l                 e                                          r',
-  'l                ppp                                   c     r',
-  'l                      c              c                      r',
+  'l                ppp                                         r',
+  'l                      c                                     r',
   'gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg',
 ];
 
@@ -324,7 +324,8 @@ displayMode('maxed', 'pixelated');
 // Load images/fonts (q5-style, no preload)
 grassImg = loadImage('assets/grass.png');
 coinsImg = loadImage('assets/coin.png');
-charactersImg = loadImage('assets/characters.png');
+// charactersImg = loadImage('assets/characters.png');
+pinkMonsterImg = loadImage('assets/pink-monster.png')
 brickImg = loadImage('assets/brick.png');
 codeFont = loadFont('assets/SourceCodePro-Regular.ttf');
 
@@ -549,16 +550,17 @@ function setup() {
 
   player = new Sprite(playerStartX, playerStartY, 12, 12);
   player.layer = 1;
-  player.anis.w = 16;
-  player.anis.h = 16;
-  player.anis.offset.y = 1;
+  player.anis.w = 32;
+  player.anis.h = 32;
+  player.anis.offset.y = -5;
   player.anis.frameDelay = 8;
-  player.spriteSheet = charactersImg;
+  player.spriteSheet = pinkMonsterImg;
+  player.scale =.5;
   player.addAnis({
     idle: { row: 0, frames: 4 },
     knockback: { row: 0, frames: 1 },
-    run: { row: 1, frames: 3 },
-    jump: { row: 1, col: 3, frames: 2 }
+    run: { row: 2, frames: 6 },
+    jump: { row: 1, frames: 8 }
   });
   player.changeAni('idle');
   player.rotationLock = true;
@@ -759,7 +761,7 @@ function update() {
       }
     } else {
       // Phase 2: already answered, wait for SPACE to continue
-      if (kb.presses('space')) {
+      if (kb.presses('c')) {
         // Clear question state
         currentQuestion = null;
         currentQuestionIndex = -1;
@@ -808,8 +810,8 @@ function update() {
     }
 
     for (let en of enemies) {
-      const radius = 100;
-      const speed = ROAM_SPEED / 2;
+      const radius = 50;
+      const speed = ROAM_SPEED / 1.5;
       en.angle += speed;
       en.x = en.spawnX + cos(en.angle) * radius;
       en.y = en.spawnY + sin(en.angle) * radius;
@@ -825,11 +827,11 @@ function update() {
     if (kb.pressing('left') || kb.pressing('a')) {
       player.changeAni('run');
       player.vel.x = -1.5;
-      player.scale.x = -1;
+      player.scale.x = -.5;
     } else if (kb.pressing('right') || kb.pressing('d')) {
       player.changeAni('run');
       player.vel.x = 1.5;
-      player.scale.x = 1;
+      player.scale.x = .5;
     } else {
       if (
         player.vel.y === 0 &&
@@ -1263,7 +1265,7 @@ function update() {
       const hintY = overlayY + overlayH - 80;
 
       const hintText = codeLensAnswered
-        ? "Press SPACE to continue."
+        ? "Press \'c\' to continue."
         : "Press 1, 2, 3, or 4 to choose your fix.";
 
       drawWrappedText(
