@@ -1107,90 +1107,129 @@ function update() {
     fill(50, 205, 50);
     textStyle(BOLD);
     textAlign(CENTER, TOP);
-    textSize(72);
+    textSize(80);
     text("Code Lens", canvas.w / 2, overlayY + 30);
 
-    if (currentQuestion) {
-      const qX = overlayX + 60;
-      const qY = overlayY + 140;
-      const textBoxWidth = overlayW - 120;
+if (currentQuestion) {
+  const qX = overlayX + 60;
+  const qY = overlayY + 240;
+  const textBoxWidth = overlayW - 120;
 
-      textAlign(LEFT, TOP);
+  textAlign(LEFT, TOP);
 
-      textSize(44);
+  // -------------------------
+  // QUESTION AT THE TOP
+  // -------------------------
+  textSize(60);
+  fill(0,255,0); // question text color
 
-      // REMOVE FOR DEBUGGING QUESTIONS
-      currentQuestion.prompt = currentQuestion.prompt.replace(/^.*?:\s*/, '');
+  // REMOVE FOR DEBUGGING QUESTIONS
+  currentQuestion.prompt = currentQuestion.prompt.replace(/^.*?:\s*/, '');
 
-      let nextY = drawWrappedText(currentQuestion.prompt, qX, qY, textBoxWidth, 1.4);
+  // Draw the prompt across the top (full width)
+  let promptBottomY = drawWrappedText(
+    currentQuestion.prompt,
+    qX,
+    qY,
+    textBoxWidth,
+    1.4
+  );
 
-      // Code block in different style
-      textSize(34);
-      fill(200, 255, 200);
-      // textStyle(ITALIC);
+  // -------------------------
+  // TWO COLUMNS UNDER PROMPT
+  // left: code    right: choices
+  // -------------------------
+  const gutter = 40; // space between columns
+  const columnTopY = promptBottomY + 40;
+  const columnWidth = (textBoxWidth - gutter) / 2;
 
-      // currentQuestion.code = currentQuestion.code.replace(/\n/g, '<br>');
-      const codeLines = currentQuestion.code.split('\n');
-      let y = nextY + 50;
-      let indentLevel = 0;
-      const indentSize = 40; // pixels per indent
-      const baseX = qX + 150;
+  const codeX = qX;                       // left column
+  const choicesX = qX + columnWidth + gutter; // right column
 
-      for (let i = 0; i < codeLines.length; i++) {
-        let line = codeLines[i].trim(); // remove leading/trailing spaces
+  // -------------------------
+  // CODE BLOCK (LEFT COLUMN)
+  // -------------------------
+  textSize(32);
+  fill(200, 255, 200); // code text color
 
-        // --- Adjust indentation rules ---
+  const codeLines = currentQuestion.code.split('\n');
+  let codeY = columnTopY;
+  let indentLevel = 0;
+  const indentSize = 40; // pixels per indent
+  const baseX = codeX + 40;
 
-        // If current line starts with '}', reduce indent first
-        if (line.startsWith('}')) {
-          indentLevel = Math.max(0, indentLevel - 1);
-        }
+  for (let i = 0; i < codeLines.length; i++) {
+    let line = codeLines[i].trim(); // remove leading/trailing spaces
 
-        // Compute x offset based on current indent level
-        const x = baseX + indentLevel * indentSize;
-
-        // Draw the line
-        y = drawWrappedText(line, x, y, textBoxWidth, 1.8);
-
-        // If this line ends with '{', increase indent for the next line
-        if (line.endsWith('{')) {
-          indentLevel++;
-        }
-      }
-
-      // Update nextY if needed
-      nextY = y;
-
-
-
-      //nextY = drawWrappedText(currentQuestion.code, qX+150, nextY + 150, textBoxWidth, 1.3);
-      textStyle(NORMAL);
-      fill(50, 205, 50);
-
-      textSize(38);
-      nextY += 50;
-      for (let i = 0; i < currentShuffledAnswers.length; i++) {
-        const label = (i + 1) + ") " + currentShuffledAnswers[i];
-        nextY = drawWrappedText(label, qX, nextY + 10, textBoxWidth, 1.3);
-      }
-
-      fill(200);
-      textSize(30);
-      const hintY = overlayY + overlayH - 80;
-      drawWrappedText(
-        "Press 1, 2, 3, or 4 to choose your fix.",
-        qX,
-        hintY,
-        textBoxWidth,
-        1.2
-      );
-    } else {
-      // If questions not ready but somehow paused
-      fill(200);
-      textSize(32);
-      textAlign(CENTER, CENTER);
-      text("Questions not loaded yet.", canvas.w / 2, canvas.h / 2);
+    // If current line starts with '}', reduce indent first
+    if (line.startsWith('}')) {
+      indentLevel = Math.max(0, indentLevel - 1);
     }
+
+    // Compute x offset based on current indent level
+    const x = baseX + indentLevel * indentSize;
+
+    // Draw the line of code
+    codeY = drawWrappedText(line, x, codeY, columnWidth, 1.5);
+
+    // If this line ends with '{', increase indent for the next line
+    if (line.endsWith('{')) {
+      indentLevel++;
+    }
+
+    // small extra spacing between code lines
+    codeY += 8;
+  }
+
+  const codeBottomY = codeY;
+
+  // -------------------------
+  // ANSWER CHOICES (RIGHT COLUMN)
+  // -------------------------
+  textSize(40);
+  fill(255); // answer text color
+
+  const labels = ['1', '2', '3', '4'];
+  let choicesY = columnTopY;
+
+  if (currentQuestion.choices && currentQuestion.choices.length > 0) {
+    for (let i = 0; i < currentQuestion.choices.length; i++) {
+      const label = labels[i] || (i + 1) + '.';
+      const optionText = label + '. ' + currentQuestion.choices[i];
+
+      choicesY = drawWrappedText(optionText, choicesX, choicesY, columnWidth, 1.4);
+      choicesY += 50; // spacing between choices
+    }
+  }
+
+  const choicesBottomY = choicesY;
+
+  // How low the content goes (max of code or choices)
+  const contentBottomY = Math.max(codeBottomY, choicesBottomY);
+
+  // -------------------------
+  // HINT SECTION (bottom area)
+  // -------------------------
+  fill(200);                // light gray color
+  textSize(30);             // slightly smaller than question text
+  const hintY = overlayY + overlayH - 80; // pinned near bottom of overlay
+
+  drawWrappedText(
+    "Press 1, 2, 3, or 4 to choose your fix.",
+    qX,
+    hintY,
+    textBoxWidth,
+    1.2
+  );
+
+} else {
+  // If questions not ready but somehow paused
+  fill(200);
+  textSize(32);
+  textAlign(CENTER, CENTER);
+  text("Questions not loaded yet.", canvas.w / 2, canvas.h / 2);
+}
+
   }
 
   if (damageFlashTimer > 0) {
