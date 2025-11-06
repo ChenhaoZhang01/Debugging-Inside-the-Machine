@@ -962,8 +962,10 @@ function update() {
     if(currentDifficulty=="kpop") fill(212,175,55);
     if(currentDifficulty=="minecraft") fill(65,111,40);
 
+    let myLevel = currentDifficulty;
+    if(myLevel == 'kpop') myLevel = 'K-Pop Demon Hunters'
     text(
-      "Difficulty: " + currentDifficulty.toUpperCase(),
+      "Difficulty: " + myLevel.toUpperCase(),
       canvas.w / 2,
       canvas.h / 2 + 150
     );
