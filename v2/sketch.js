@@ -9,6 +9,7 @@ let player, groundSensor, grass, platforms, coins, enemies, lwall, rwall;
 let grassImg, coinsImg, charactersImg, brickImg, codeFont;
 let key, door, keyImg, doorImg;
 let loc = "HOME", foundKey = false; // for diections
+let failMsg = "Stability has reached 0%";
 
 let score = 0;
 let systemStability = 100;
@@ -689,6 +690,9 @@ function touchCoinDamage(player, coin) {
   damageFlashTimer = 300;
 
   if (systemStability <= 0) {
+    player.vel.x = 0;
+    player.vel.y = 0;
+    world.active = false;
     triggerGameOver();
     return;
   }
@@ -713,6 +717,8 @@ function hitEnemy(player, enemy) {
   damageFlashTimer = 300;
 
   if (systemStability <= 0) {
+    player.vel.x = 0;
+    player.vel.y = 0;
     triggerGameOver();
   }
 }
@@ -721,10 +727,10 @@ function hitEnemy(player, enemy) {
 // End states
 // -------------------------
 function triggerGameOver() {
-  gameState = 'gameOver';
-    player.vel.x = 0;
-    player.vel.y = 0;
+  player.vel.x = 0;
+  player.vel.y = 0;
   world.active = false;
+  gameState = 'gameOver';
   allSprites.forEach(s => {
     if (s.ani) s.ani.stop();
   });
@@ -791,6 +797,7 @@ function update() {
     
     // QUIT option
     if(kb.presses('q')){
+        failMsg = "Mission Aborted";
         triggerGameOver();
     }
     if(kb.presses('i')){      
@@ -876,6 +883,8 @@ function update() {
             nearestCoin = null;
 
             if (systemStability <= 0) {
+              player.vel.x = 0;
+              player.vel.y = 0;
               pendingStateAfterCodeLens = 'gameOver';
             }
           }
@@ -901,6 +910,9 @@ function update() {
         // else 
           if (pendingStateAfterCodeLens === 'gameOver') {
           pendingStateAfterCodeLens = null;
+          player.vel.x=0;
+          player.vel.y=0;
+          world.active = false;
           triggerGameOver();
         } else {
           pendingStateAfterCodeLens = null;
@@ -936,6 +948,9 @@ function update() {
       if (systemStability > 0) systemStability--;
       stabilityTimer = 0;
       if (systemStability <= 0) {
+        player.vel.x = 0;
+        player.vel.y = 0;
+        world.active = false;
         triggerGameOver();
       }
     }
@@ -1023,7 +1038,10 @@ function update() {
       player.vel.x = 0;
       player.vel.y = 0;
       if(score >= totalNodes)triggerWin();
-      else triggerGameOver();
+      else{ 
+        triggerGameOver();
+        failMsg = "Unrepaired Glitches";
+      }
     }
   }
 
@@ -1102,6 +1120,8 @@ function update() {
   } else if (gameState === 'directions') {
       getDirections();
   } else if (gameState === 'gameOver' || gameState === 'win') {
+    player.vel.x=0;
+    //player.vel.y=0;
     const isWin = (gameState === 'win');
 
     fill(0, 0, 0, 200);
@@ -1109,22 +1129,22 @@ function update() {
     rect(0, 0, canvas.w, canvas.h);
 
     const headingColor = isWin ? color(0, 255, 0) : color(255, 0, 0);
-    const headingText = isWin ? "System Stabilized" : "System Failure";
+    const headingText = isWin ? "System Stabilized" : "System Failure | " + failMsg;
 
     const percentFixed = totalNodes > 0 ? (score / totalNodes) * 100 : 0;
     const accuracy = nodesAttempted > 0 ? (score / nodesAttempted) * 100 : 0;
 
     let rank;
-    if (accuracy >= 90) rank = "S-Rank: Kernel Guardian";
-    else if (accuracy >= 70) rank = "A-Rank: Core Debugger";
-    else if (accuracy >= 40) rank = "B-Rank: Stack Tracer";
-    else rank = "C-Rank: Glitch Magnet";
+    if (accuracy >= 90 && isWin) rank = "Kernel Guardian ⭐⭐⭐⭐";
+    else if (accuracy >= 70 && isWin) rank = "Core Debugger ⭐⭐⭐";
+    else if (accuracy >= 40 && isWin) rank = "Stack Tracer ⭐⭐";
+    else rank = "Glitch Magnet ⭐";
 
     fill(headingColor);
-    textSize(150);
+    textSize(75);
     textStyle(BOLD);
     textAlign(CENTER, CENTER);
-    text(headingText, canvas.w / 2, canvas.h / 2 - 200);
+    text(headingText, canvas.w / 2, canvas.h / 2 - 150);
 
     fill(230);
     textSize(42);
@@ -1133,9 +1153,9 @@ function update() {
     let lineY = canvas.h / 2 - 40;
     text("Difficulty: " + currentDifficulty.toUpperCase(), canvas.w / 2, lineY);
     lineY += 50;
-    text("Nodes Fixed: " + score + " / " + totalNodes, canvas.w / 2, lineY);
+    text("Glitches Fixed: " + score + " / " + totalNodes, canvas.w / 2, lineY);
     lineY += 50;
-    text("Nodes Attempted (Code Lens): " + nodesAttempted, canvas.w / 2, lineY);
+    text("Glitches Attempted: " + nodesAttempted, canvas.w / 2, lineY);
     lineY += 50;
     text("Accuracy: " + accuracy.toFixed(1) + "%", canvas.w / 2, lineY);
     lineY += 50;
@@ -1178,25 +1198,25 @@ function update() {
       textAlign(CENTER, MIDDLE);
         fill(255,255,0)
         textSize(45);
-        text('USB Key found! Fix all nodes before entering the USB Port!', canvas.w/2, 200);
+        text('USB Key found! Fix all glitches before entering the USB Port!', canvas.w/2, 200);
     }
     if(currentDifficulty==='easy' && foundKey && score>=totalNodes){
       textAlign(CENTER, MIDDLE);
         fill(0,255,0)
         textSize(45);
-        text('USB Key found and all Node fixed, find and enter the USB Port!', canvas.w/2, 200);
+        text('USB Key found and all glitches fixed, find and enter the USB Port!', canvas.w/2, 200);
     }
     if(currentDifficulty==='easy' && !foundKey && score>=totalNodes){
       textAlign(CENTER, MIDDLE);
         fill(255,255,0)
         textSize(45);
-        text('All Node fixed, the USB Key to disable the firewall!', canvas.w/2, 200);
+        text('All glitches fixed, the USB Key to disable the firewall!', canvas.w/2, 200);
     }
     if(currentDifficulty==='easy' && !foundKey && score<totalNodes){
       textAlign(CENTER, MIDDLE);
         fill(255,0,0)
         textSize(45);
-        text('Fix all Nodes and find the USB Key to disable the firewall!', canvas.w/2, 200);
+        text('Fix all glitches and find the USB Key to disable the firewall!', canvas.w/2, 200);
     }
 
     const barWidth = 400;
