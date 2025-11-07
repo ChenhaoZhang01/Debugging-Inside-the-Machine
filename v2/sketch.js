@@ -1,5 +1,5 @@
 // Disable p5play's built-in Google Analytics tagging
-window._p5play_gtagged = false;
+window._p5play_gtagged = true;
 
 const DEBUG_MODE = false;
 // -------------------------
