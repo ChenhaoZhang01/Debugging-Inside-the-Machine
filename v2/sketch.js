@@ -722,6 +722,8 @@ function hitEnemy(player, enemy) {
 // -------------------------
 function triggerGameOver() {
   gameState = 'gameOver';
+    player.vel.x = 0;
+    player.vel.y = 0;
   world.active = false;
   allSprites.forEach(s => {
     if (s.ani) s.ani.stop();
@@ -1344,13 +1346,17 @@ function update() {
         // Color based on correctness / choice once answered
         if (codeLensAnswered) {
           if (isCorrect) {
+            textStyle('bold');
             fill(0, 255, 0); // green for correct
           } else if (isPlayerChoice && !isCorrect) {
+            textStyle('normal');
             fill(255, 80, 80); // red for wrong chosen answer
           } else {
+            textStyle('normal');
             fill(180); // dim others
           }
         } else {
+          textStyle('bold');
           fill(255); // before answering
         }
 
@@ -1359,14 +1365,14 @@ function update() {
         choicesY += 50;
 
         // Strikethrough for incorrect chosen answer
-        if (codeLensAnswered && isPlayerChoice && !isCorrect) {
-          stroke(255, 80, 80);
-          strokeWeight(3);
-          const lh = textSize() * 1.4;
-          const midY = choiceTopY + lh * 0.5;
-          line(choicesX, midY, choicesX + columnWidth, midY);
-          noStroke();
-        }
+        // if (codeLensAnswered && isPlayerChoice && !isCorrect) {
+        //   stroke(255, 80, 80);
+        //   strokeWeight(2);
+        //   const lh = textSize() * 1.4;
+        //   const midY = choiceTopY + lh * 0.5;
+        //   line(choicesX, midY-5, choicesX + columnWidth, midY-5);
+        //   noStroke();
+        // }
       }
 
       const choicesBottomY = choicesY;
