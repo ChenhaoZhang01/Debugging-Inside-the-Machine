@@ -1111,12 +1111,12 @@ function update() {
      text(
       "2 - Medium | Iteration " + (levelComplete[1]?"✅":"❌"),
       canvas.w / 2,
-      canvas.h / 2 + 250
+      canvas.h / 2 + 225
     );
      text(
       "3 - Hard | Functions & Lists " + (levelComplete[2]?"✅":"❌"),
       canvas.w / 2,
-      canvas.h / 2 + 325
+      canvas.h / 2 + 275
     );
     textStyle('normal');
     fill(150);
