@@ -2,7 +2,8 @@
 window._p5play_gtagged = false;
 
 let bestRank = "Play to earn a rank";
-const DEBUG_MODE = false;
+let DEBUG_MODE = true;
+const QUESTION_NUMBERS = false;
 // -------------------------
 // Global game state
 // -------------------------
@@ -475,8 +476,8 @@ function initMatrixBackground() {
   // matrixBG.image(bgImg, 0, 0, matrixBG.width, matrixBG.height);
 
   matrixBG.noStroke();
-  matrixBG.textFont('monospace');
-  matrixBG.textSize(12);
+  // matrixBG.textFont('monospace');
+  // matrixBG.textSize(12);
 
   // for (let x = 0; x < matrixBG.width; x += 24) {
   //   for (let y = 0; y < matrixBG.height; y += 24) {
@@ -765,6 +766,14 @@ function update() {
   matrixBG.image(bgImg, 0, 0, bgImg.width*2, bgImg.height*2);
   // --- State-based input ---
   if (gameState === 'start') {
+    if (kb.presses('0')) {
+      DEBUG_MODE = !DEBUG_MODE;
+      loadQuestionFiles();
+    }
+    // if(DEBUG_MODE){
+    //   fill(255,0,0);
+    //   text("DEBUGGING", canvas.w-30, 30)
+    // }
     if (kb.presses('1')) setDifficulty('easy');
     if (kb.presses('2')) setDifficulty('medium');
     if (kb.presses('3')) setDifficulty('hard');
@@ -1134,6 +1143,10 @@ function update() {
       canvas.w / 2,
       canvas.h / 2 + 400
     );
+    if(DEBUG_MODE){
+      fill(255,0,0);
+      text("DEBUGGING", canvas.w-160, 30)
+    }
 
   } else if (gameState === 'directions') {
       getDirections();
@@ -1327,7 +1340,10 @@ function update() {
       textSize(40);
       fill(0, 255, 0);
 
-      const promptText = currentQuestion.prompt.replace(/^.*?:\s*/, '');
+      const promptText = currentQuestion.prompt;
+      if(!QUESTION_NUMBERS){
+        currentQuestion.prompt.replace(/^.*?:\s*/, '');
+      }
 
       let promptBottomY = drawWrappedText(
         promptText,
