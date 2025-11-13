@@ -2,7 +2,7 @@
 window._p5play_gtagged = false;
 
 let bestRank = "Play to earn a rank";
-let DEBUG_MODE = true;
+let DEBUG_MODE = false;
 const QUESTION_NUMBERS = false;
 // -------------------------
 // Global game state
