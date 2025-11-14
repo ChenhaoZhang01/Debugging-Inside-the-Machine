@@ -555,11 +555,11 @@ function setup() {
   // -------------------------
   // Sound
   // -------------------------
-  soundFormats('mp3', 'ogg'); // optional, ensures cross-browser support
+  soundFormats('mp3', 'ogg', 'wav'); // optional, ensures cross-browser support
 
   // Background music: load async, configure in callback
   bgMusic = loadSound('assets/retro.mp3', () => {
-    bgMusic.setVolume(0.25);  // 0.0 to 1.0
+    bgMusic.setVolume(1);  // 0.0 to 1.0
     // Don't auto-loop here if you want to obey click-to-start
     // bgMusic.loop();
   });
@@ -567,10 +567,10 @@ function setup() {
   // Other sounds: load async; just guard before using them
   keySound     = loadSound('assets/key.mp3');
   hitSound     = loadSound('assets/hit.mp3');
-  loseSound    = loadSound('assets/lose.mp3');
+  loseSound    = loadSound('assets/lose.wav');
   correctSound = loadSound('assets/correct.mp3');
-  winSound     = loadSound('assets/win.mp3');
-  wrongSound   = loadSound('assets/wrong.mp3');
+  winSound     = loadSound('assets/win.wav');
+  wrongSound   = loadSound('assets/wrong.wav');
   splatSound   = loadSound('assets/splat.mp3');
   selectSound  = loadSound('assets/select.mp3');
 
@@ -784,7 +784,7 @@ function triggerWin() {
 // Main loop
 // -------------------------
 function update() {
-  // BACKGROUND IMAGE
+    // BACKGROUND IMAGE
   matrixBG.image(bgImg, 0, 0, bgImg.width*2, bgImg.height*2);
   // --- State-based input ---
   if (gameState === 'start') {
@@ -814,7 +814,7 @@ function update() {
       });
     }
     if (kb.presses('i')) {
-      selectSound.play()
+      selectSound.play();
       gameState = 'directions';
     }
   } else if (gameState === 'directions') {
@@ -851,6 +851,11 @@ function update() {
   } else if (gameState === 'play') {
     world.gravity.y = 10;
     
+    // Toggle bg music on/off
+    if(kb.presses('escape')){
+      if(bgMusic.isLooping()) bgMusic.stop();
+      else bgMusic.loop();
+    }
     // QUIT option
     if(kb.presses('q')){
         failMsg = "Mission Aborted";
@@ -895,7 +900,10 @@ function update() {
       }
     }
   } else if (gameState === 'paused') {
-    if(kb.presses('i')) showPseudoSummary = !showPseudoSummary;
+    if(kb.presses('i')){
+      selectSound.play();
+      showPseudoSummary = !showPseudoSummary;
+    }
     // Phase 1: pick an answer 1–4
     if (!codeLensAnswered && !showPseudoSummary) {
       let choice = null;
@@ -1267,14 +1275,15 @@ function update() {
     textSize(40);
     text("Press ESCAPE to return to the MAIN MENU", canvas.w / 2, canvas.h / 2 + 500);
   } else if (gameState === 'play') {
-    if(currentDifficulty==='easy'){
+    //if(currentDifficulty==='easy'){
       fill(250, 250, 250, 250);
       stroke(0);
       strokeWeight(4);
       textAlign(CENTER, CENTER);
       textSize(40);
-      text('Press \'i\' for Instructions', canvas.w/2,canvas.h -30);
-    }   
+      let offOn = bgMusic.isLooping()?"off":"on";
+      text('Press \'i\' for Instructions | \'esc\' to turn '+offOn+' music', canvas.w/2,canvas.h -30);
+    //}   
     fill(250, 250, 250);
     stroke(0);
     strokeWeight(4);
@@ -1734,6 +1743,9 @@ function update() {
     camera.y = Math.round(targetY / snap) * snap;
   }
   function drawPseudocode(){
+    fill(0, 0, 0, 225);
+    noStroke();
+    rect(0, 0, canvas.w, canvas.h);
     const overlayPadding = 50;
     const overlayX = overlayPadding;
     const overlayY = overlayPadding;
@@ -1743,7 +1755,7 @@ function update() {
     fill(0, 0, 0, 200);
     stroke(50, 205, 50, 255);
     strokeWeight(4);
-    rect(overlayX, overlayY, overlayW, overlayH, 10);
+    // rect(overlayX, overlayY, overlayW, overlayH, 10);
 
     noStroke();
     fill(50, 205, 50);
