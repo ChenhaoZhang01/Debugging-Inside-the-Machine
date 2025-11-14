@@ -5,6 +5,7 @@ let bestRank = "Play to earn a rank";
 let DEBUG_MODE = false;
 const QUESTION_NUMBERS = false;
 let showPseudoSummary = false;
+let totalQuestionsAnsweredCorrect = 0;
 // -------------------------
 // Global game state
 // -------------------------
@@ -872,6 +873,7 @@ function update() {
           nodesAttempted++;
 
           if (codeLensWasCorrect) {
+            totalQuestionsAnsweredCorrect++;
             // CORRECT: apply effects now but stay on screen
             const coinX = nearestCoin.x;
             const coinY = nearestCoin.y;
@@ -1142,7 +1144,7 @@ function update() {
     // best rank
     fill(255)
     text(
-      "Current Rank: " + bestRank,
+      "Current Rank: " + bestRank + " | Questions Answered Correctly: " + totalQuestionsAnsweredCorrect,
       canvas.w / 2,
       canvas.h / 2 + 400
     );
