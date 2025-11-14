@@ -361,7 +361,8 @@ const tilemapHard = [
 ];
 
 function getTilemapForDifficulty(diff) {
-  if(diff === 'kpop' || diff === 'minecraft') return tilemapEasy;
+  if(diff === 'kpop') return tilemapMedium;
+  if(diff === 'minecraft') return tilemapHard;
   if (diff === 'easy') return tilemapEasy;
   if (diff === 'medium') return tilemapMedium;
   return tilemapHard;
@@ -1276,11 +1277,11 @@ function update() {
     text("Press ESCAPE to return to the MAIN MENU", canvas.w / 2, canvas.h / 2 + 500);
   } else if (gameState === 'play') {
     //if(currentDifficulty==='easy'){
-      fill(250, 250, 250, 250);
+      fill(255);
       stroke(0);
       strokeWeight(4);
       textAlign(CENTER, CENTER);
-      textSize(40);
+      textSize(36);
       let offOn = bgMusic.isLooping()?"off":"on";
       text('Press \'i\' for Instructions | \'esc\' to turn '+offOn+' music', canvas.w/2,canvas.h -30);
     //}   
@@ -1682,11 +1683,11 @@ function update() {
     y += 30;
     // textSize(34);
 
-    fill(150);
-    textSize(40);
+    fill(255);
+    textSize(36);
     textStyle(BOLD);
     textAlign(CENTER, TOP);
-    text("Press 'esc' to return " + loc + " or 'i' for AP CSP Pseudocode.", canvas.w/2, canvas.h - 80);
+    text("Press 'esc' to return " + loc + " or 'i' for AP CSP Pseudocode", canvas.w/2, canvas.h - 45);
     if(loc !== "HOME"){
       world.active = true;
       allSprites.forEach(s => {
@@ -1889,14 +1890,15 @@ function update() {
         }
 
         // Bottom hint
-        fill(200);
         textStyle(BOLD);
-        textSize(30);
-        const hintY = overlayY + overlayH - 80;
+        fill(255);
+        textSize(36);        
+        textAlign(CENTER)
+        const hintY = overlayY + overlayH - 0;
 
         drawWrappedText(
-          "Press 'i' to return.",
-          qX,
+          "Press 'i' to return " + loc,
+          canvas.w/2,
           hintY,
           textBoxWidth,
           1.2
