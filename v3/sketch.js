@@ -1289,8 +1289,8 @@ function update() {
     stroke(0);
     strokeWeight(4);
     textAlign(LEFT, TOP);
-    textSize(50);
-    text('Nodes Fixed: ' + score + ' / ' + totalNodes, canvas.w - 600, 20);
+    textSize(40);
+    text('Glitches Repaired: ' + score + '/' + totalNodes, canvas.w - 600, 20);
     if(foundKey){ 
       fill(0,255,0);
       text('USB Key: FOUND', canvas.w - 600, 80);
