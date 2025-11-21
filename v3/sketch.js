@@ -24,6 +24,10 @@ let loc = "HOME", foundKey = false; // for diections
 let failMsg = "Stability has reached 0%";
 const levelComplete  = [false,false,false];
 
+let sparkles = [];
+let glows = [];
+
+
 let score = 0;
 let systemStability = 100;
 
@@ -282,17 +286,17 @@ const tilemapMedium = [
   'gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg',
   'l                                                            r',
   'l                                                            r',
-  'l                     k                                     cr',
-  'l                   eppp                                     r',
+  'l                     k                                      r',
+  'l                   eppp                                   c r',
   'l                                               ce           r',
   'l                                       e                    r',
-  'l          eppp           c            ppp                   r',
+  'l          eppp          c             ppp     p             r',
   'l          c                                                 r',
   'l                                                            r',
   'l                       e ppp e                            d r',
-  'l                                    c                    pppr',
+  'l                                   pc                    pppr',
   'l      e                                                     r',
-  'l     ppp                                             c      r',
+  'l     ppp                                            pc      r',
   'l                              ppp          e                r',
   'l                           c                                r',
   'l                    e                           pe          r',
@@ -313,42 +317,42 @@ const tilemapHard = [
   'l                     e                e          e        ppr',
   'l                                                            r',
   'l                             pe           e        ppe      r',
-  'lppcppp           p                                          r',
+  'lppcpppp          p                                       pp r',
   'l                       ppp         pp                       r',
   'l            e                                c              r',
-  'l           ppp                                              r',
+  'l           ppp                                             pr',
   'l                                                 p          r',
   'l                                                            r',
-  'l                                       ppppp                r',
-  'l         c                                                  r',
+  'l                                       ppppp               pr',
+  'l                                                            r',
   'l                                cpp                         r',
-  'l                                                            r',
-  'l ppp                     e                                  r',
+  'l                                                           pr',
+  'l                         e                                  r',
   'l                        ppppp                               r',
-  'l                                                            r',
+  'l                                                           pr',
   'l                     c                                      r',
   'l               c                                            r',
-  'l     ppp                                                    r',
+  'l     pppp                                                  pr',
   'l                                                            r',
   'l    e                                                       r',
-  'l   ppp                                                      r',
-  'l            c                                               r',
+  'l                    c                                      pr',
   'l                                                            r',
-  'l                      e                                     r',
+  'l                                                            r',
+  'l                      e                                    pr',
   'l                  cpppp                                     r',
   'l                                                            r',
-  'l         ppp                                                r',
-  'l        c                                                   r',
+  'l         ppp              c                                 r',
+  'l        c                                                 ppr',
   'l                                c                           r',
-  'l                                       e d         c        r',
+  'l                 ppp                   e d         c        r',
   'l  e                                  ppppppppp              r',
   'l ppp             e                                       c  r',
-  'l                ppp                                      e  r',
+  'l                                                         e  r',
   'l                                                            r',
   'l                                                            r',
   'l                                                     p      r',
   'l   pppc                                                     r',
-  'l                      ppp                                   r',
+  'l                                                            r',
   'l                                                    e     c r',
   'l           cpe                                              r',
   'l                                                            r',
@@ -1136,18 +1140,150 @@ function update() {
   }
 
   if (gameState === 'start') {
-    fill(0, 0, 0, 200);
-    noStroke();
-    rect(0, 0, canvas.w, canvas.h);
 
-    fill(255);
-    textSize(80);
-    textStyle(BOLD);
-    textAlign(CENTER, CENTER);
-    text("Debugging: Inside the Machine", canvas.w / 2, canvas.h / 2 - 275);
-    textSize(40)
-    fill(155,155,155)
-    text("An AP Computer Science Principles Pseudocode Review Game", canvas.w / 2, canvas.h / 2 - 200);
+    // levelComplete[0] = true;
+    // levelComplete[1] = true;
+    // levelComplete[2] = true;
+
+    // fill(0, 0, 0, 200);
+    // noStroke();
+    // rect(0, 0, canvas.w, canvas.h);
+  
+    // Dark overlay
+fill(0, 0, 0, 200);
+noStroke();
+rect(0, 0, canvas.w, canvas.h);
+
+// Check level completion
+const allComplete = levelComplete.every(v => v);
+
+if (allComplete) {
+  // Spawn new glow particles occasionally
+  if (frameCount % 6 === 0) {
+    for (let i = 0; i < 3; i++) {
+      glows.push({
+        x: random(canvas.w),
+        y: random(canvas.h),
+        radius: random(80, 200),
+        alpha: random(40, 80),
+        decay: random(0.3, 0.8)
+      });
+    }
+  }
+
+  // Spawn new sparkles occasionally
+  if (frameCount % 10 === 0) {
+    for (let i = 0; i < 6; i++) {
+      sparkles.push({
+        x: random(canvas.w),
+        y: random(canvas.h),
+        size: random(2, 6),
+        alpha: 255,
+        decay: random(1, 3),
+        vy: random(-0.3, -0.1) // slow upward drift
+      });
+    }
+  }
+} else {
+  // Clear particles when not complete
+  sparkles = [];
+  glows = [];
+}
+
+// DRAW GLOWS
+push();
+noStroke();
+for (let i = glows.length - 1; i >= 0; i--) {
+  let g = glows[i];
+  fill(255, 215, 0, g.alpha);
+  ellipse(g.x, g.y, g.radius);
+
+  g.alpha -= g.decay;
+
+  if (g.alpha <= 0) {
+    glows.splice(i, 1);
+  }
+}
+pop();
+
+// DRAW SPARKLES
+push();
+noStroke();
+for (let i = sparkles.length - 1; i >= 0; i--) {
+  let s = sparkles[i];
+
+  fill(255, 255, random(150, 255), s.alpha);
+  ellipse(s.x, s.y, s.size);
+
+  // update
+  s.y += s.vy;
+  s.alpha -= s.decay;
+
+  if (s.alpha <= 0) {
+    sparkles.splice(i, 1);
+  }
+}
+pop();
+
+// Title text
+textAlign(CENTER, CENTER);
+textStyle(BOLD);
+textSize(80);
+
+if (allComplete) {
+  // slower shimmer effect
+  const shimmerOffset = sin(frameCount * 0.01) * 4;
+  const sparkle = random(220, 255);
+
+  // gold shadow/glow
+  fill(255, 180, 0, 220);
+  text(
+    "Debugging: Inside the Machine",
+    canvas.w / 2 + 3,
+    canvas.h / 2 - 272
+  );
+
+  // gold shimmer text
+  fill(sparkle, sparkle * 0.9, 0);
+  text(
+    "Debugging: Inside the Machine",
+    canvas.w / 2 + shimmerOffset,
+    canvas.h / 2 - 275
+  );
+
+} else {
+  // regular title (your original)
+  fill(255);
+  text(
+    "Debugging: Inside the Machine",
+    canvas.w / 2,
+    canvas.h / 2 - 275
+  );
+}
+
+// Subtitle
+textSize(40);
+if (allComplete) {
+  fill(220); // slightly brighter when gold is active
+} else {
+  fill(155, 155, 155); // your original gray
+}
+
+text(
+  "An AP Computer Science Principles Pseudocode Review Game",
+  canvas.w / 2,
+  canvas.h / 2 - 200
+);
+
+
+    // fill(255);
+    // textSize(80);
+    // textStyle(BOLD);
+    // textAlign(CENTER, CENTER);
+    // text("Debugging: Inside the Machine", canvas.w / 2, canvas.h / 2 - 275);
+    // textSize(40)
+    // fill(155,155,155)
+    // text("An AP Computer Science Principles Pseudocode Review Game", canvas.w / 2, canvas.h / 2 - 200);
 
     fill(200);
     textSize(50);
