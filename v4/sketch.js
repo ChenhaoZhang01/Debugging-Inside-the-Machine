@@ -1488,6 +1488,8 @@ text(
       if(currentDifficulty==='easy') levelComplete[0] = true;
       if(currentDifficulty==='medium') levelComplete[1] = true;
       if(currentDifficulty==='hard') levelComplete[2] = true;
+      if(currentDifficulty==='kpop') levelComplete[3] = true;
+      if(currentDifficulty==='miecraft') levelComplete[4] = true;
     }
     fill(0, 0, 0, 200);
     noStroke();
