@@ -1160,6 +1160,7 @@ for (let en of enemies) {
     en.x += (dx / dist) * step;
     en.y += (dy / dist) * step;
   }
+  en.overlapping(key);
 }
 
 // --- DOUBLE JUMP + VARIABLE JUMP WITH COMPLETION CHECK ---
