@@ -33,7 +33,8 @@ let doorMessageEndTime = 0;
 let isJumping = false;
 let jumpPressedTime = 0;
 const maxJumpHold = 220;   // milliseconds player can hold for higher jump
-
+let jumpsLeft = 2;
+let wasOnGround = false;  // NEW: track landing
 
 let score = 0;
 let systemStability = 100;
@@ -549,7 +550,7 @@ function drawMatrixBackground() {
   resetMatrix();
   imageMode(CORNER);
 
-  const parallaxFactor = .1;
+  const parallaxFactor = 1.5;
   const pxBase = canvas.w / 2 - matrixBG.width / 2  - camera.x * parallaxFactor;
   const pyBase = canvas.h / 2 - matrixBG.height / 2 - camera.y * parallaxFactor + matrixScrollY;
 
@@ -1135,32 +1136,52 @@ for (let en of enemies) {
     en.y += (dy / dist) * step;
   }
 }
+// --- DOUBLE JUMP + VARIABLE JUMP WITH COMPLETION CHECK ---
 
-// --- VARIABLE JUMP (tap unchanged, hold stronger) ---
+// Track landing:
+const onGround =
+  groundSensor.overlapping(grass) ||
+  groundSensor.overlapping(platforms);
 
-// Start jump (tap height stays the same)
-if (groundSensor.overlapping(grass) || groundSensor.overlapping(platforms)) {
-  if (kb.presses('up') || kb.presses('space')) {
-    isJumping = true;
-    jumpPressedTime = millis();
-    player.changeAni('jump');
-    player.vel.y = -3.0;   // tap jump stays the same
+// Reset jumps ONLY on landing
+if (onGround && !wasOnGround) {
+  jumpsLeft = 1;     // default: only 1 jump
+  const allComplete = levelComplete.slice(0, 3).every(v => v === true);
+  if (allComplete) {
+    jumpsLeft = 2;   // allow double jump ONLY if allComplete
   }
 }
 
-// Boost while holding
+// Start a jump
+if (kb.presses('up') || kb.presses('space')) {
+  if (jumpsLeft > 0) {
+    isJumping = true;
+    jumpPressedTime = millis();
+    jumpsLeft--;  // uses 1 jump
+
+    player.changeAni('jump');
+    player.vel.y = -3.0;  // tap jump
+  }
+}
+
+// Hold-boost for higher jump
 if (isJumping) {
   const heldTime = millis() - jumpPressedTime;
 
-  // Stronger booster but still controlled
   if ((kb.pressing('up') || kb.pressing('space')) && heldTime < 220) {
-    player.vel.y -= 0.25;   // ⬅️ increased a bit (was 0.12)
+    player.vel.y -= 0.25;   // your boosted jump
   }
 
   if (kb.released('up') || kb.released('space') || heldTime >= 220) {
     isJumping = false;
   }
 }
+
+// Update landing memory
+wasOnGround = onGround;
+
+// --- END BLOCK ---
+
 
     if (kb.pressing('left') || kb.pressing('a')) {
       player.changeAni('run');
@@ -1448,7 +1469,7 @@ text(
     if(currentDifficulty=="hard") fill(255,0,0);
     if(currentDifficulty=="kpop") fill(212,175,55);
     if(currentDifficulty=="minecraft") fill(65,111,40);
-
+    
     let myLevel = currentDifficulty;
     if(myLevel == 'kpop') myLevel = 'K-Pop Demon Hunters'
     text(
@@ -1505,6 +1526,14 @@ text(
       fill(255,0,0);
       text("DEBUGGING", canvas.w-160, 30)
     }
+    if(allComplete){
+      textSize(30);
+      fill(255,255,0)
+      text(
+      "** Double Jump Unlocked **",
+      canvas.w / 2,
+      canvas.h / 2 + 100
+    ); }
 
   } else if (gameState === 'directions') {
       getDirections();
