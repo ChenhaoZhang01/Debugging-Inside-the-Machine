@@ -23,6 +23,8 @@ let key, door, keyImg, doorImg;
 let loc = "HOME", foundKey = false; // for diections
 let failMsg = "Stability has reached 0%";
 const levelComplete  = [false,false,false, false, false];
+const levelCompleteA = [false,false,false, false, false];
+let csa = false;
 
 let sparkles = [];
 let glows = [];
@@ -168,7 +170,13 @@ function parseQuestionLines(lines) {
 // Load easy/medium/hard question files via fetch
 // -------------------------
 async function loadQuestionFiles() {
-  let e = 'easy.txt', m = 'medium.txt', h = 'hard.txt';
+  let e,m,h;
+  if(!csa){
+    e = 'easy.txt', m = 'medium.txt', h = 'hard.txt';
+  }
+  else{
+    e = 'easy-a.txt', m = 'medium-a.txt', h = 'hard-a.txt';
+  }
   if(DEBUG_MODE) e = m = h = 'debug.txt';
 
   try {
@@ -859,6 +867,10 @@ function update() {
     // }
     // Check level completion
     const allComplete = levelComplete.slice(0, 3).every(v => v === true);
+    const allCompleteA = levelCompleteA.slice(0, 3).every(v => v === true);
+
+    // CSA/CSP Toggle
+    if (kb.presses('space')) {csa = !csa ;selectSound.play(); loadQuestionFiles();}
 
     if (kb.presses('1')) {setDifficulty('easy');selectSound.play()}
     if (kb.presses('2')) {setDifficulty('medium');selectSound.play()}
@@ -1141,7 +1153,10 @@ for (let en of enemies) {
 
 // 1) How many jumps are allowed right now?
 const allComplete = levelComplete.slice(0, 3).every(v => v === true);
-const maxJumps = allComplete ? 2 : 1;
+const allCompleteA = levelCompleteA.slice(0, 3).every(v => v === true);
+
+const maxJumps = allComplete || allCompleteA ? 2 : 1;
+
 
 // 2) Ground check
 const onGround =
@@ -1318,6 +1333,9 @@ if (player.overlapping(door) && foundKey) {
       levelComplete[0] = true;
       levelComplete[1] = true;
       levelComplete[2] = true;
+      levelCompleteA[0] = true;
+      levelCompleteA[1] = true;
+      levelCompleteA[2] = true;
     }
 
     // fill(0, 0, 0, 200);
@@ -1331,6 +1349,7 @@ rect(0, 0, canvas.w, canvas.h);
 
 // Check level completion
 const allComplete = levelComplete.slice(0, 3).every(v => v === true);
+const allCompleteA = levelCompleteA.slice(0, 3).every(v => v === true);
 
 if (allComplete) {
   // GOLD skin if all complete
@@ -1410,7 +1429,7 @@ pop();
 textAlign(CENTER, CENTER);
 textStyle(BOLD);
 textSize(80);
-
+let mainTitleOffset = 350
 if (allComplete) {
   // slower shimmer effect
   const shimmerOffset = sin(frameCount * 0.01) * 4;
@@ -1421,7 +1440,7 @@ if (allComplete) {
   text(
     "Debugging: Inside the Machine",
     canvas.w / 2 + 3,
-    canvas.h / 2 - 272
+    canvas.h / 2 - mainTitleOffset+3
   );
 
   // gold shimmer text
@@ -1429,7 +1448,7 @@ if (allComplete) {
   text(
     "Debugging: Inside the Machine",
     canvas.w / 2 + shimmerOffset,
-    canvas.h / 2 - 275
+    canvas.h / 2 - mainTitleOffset
   );
 
 } else {
@@ -1438,7 +1457,7 @@ if (allComplete) {
   text(
     "Debugging: Inside the Machine",
     canvas.w / 2,
-    canvas.h / 2 - 275
+    canvas.h / 2 - mainTitleOffset
   );
 }
 
@@ -1449,22 +1468,29 @@ if (allComplete) {
 } else {
   fill(155, 155, 155); // your original gray
 }
-
+if(csa){
+  text(
+    "An AP Computer Science A Review Game",
+    canvas.w / 2,
+    canvas.h / 2 - mainTitleOffset +75
+  );
+}
+else{
+  text(
+    "An AP Computer Science Principles Pseudocode Review Game",
+    canvas.w / 2,
+    canvas.h / 2 - mainTitleOffset +75
+  );
+}
+fill('green');
+textSize(30);
+let mode = csa? "APCS-Principles":"APCS-A";
+let mode2 = "Press 'space' to switch to " + mode
 text(
-  "An AP Computer Science Principles Pseudocode Review Game",
-  canvas.w / 2,
-  canvas.h / 2 - 200
-);
-
-
-    // fill(255);
-    // textSize(80);
-    // textStyle(BOLD);
-    // textAlign(CENTER, CENTER);
-    // text("Debugging: Inside the Machine", canvas.w / 2, canvas.h / 2 - 275);
-    // textSize(40)
-    // fill(155,155,155)
-    // text("An AP Computer Science Principles Pseudocode Review Game", canvas.w / 2, canvas.h / 2 - 200);
+    mode2,
+    canvas.w / 2,
+    canvas.h / 2 - mainTitleOffset +125
+  );
 
     fill(200);
     textSize(50);
@@ -1492,32 +1518,64 @@ text(
     );
     textSize(30);
     fill(255);
-    text(
-      "1 - Easy | Selection " + (levelComplete[0]?"✅":"❌"),
-      canvas.w / 2,
-      canvas.h / 2 + 150
-    );
-     text(
-      "2 - Medium | Iteration " + (levelComplete[1]?"✅":"❌"),
-      canvas.w / 2,
-      canvas.h / 2 + 200
-    );
-     text(
-      "3 - Hard | Functions & Lists " + (levelComplete[2]?"✅":"❌"),
-      canvas.w / 2,
-      canvas.h / 2 + 250
-    );
-    if(allComplete){
+    
+    if(!csa){
       text(
-      "Q - K-Pop Demon Hunters " + (levelComplete[3]?"✅":"❌"),
-      canvas.w / 2,
-      canvas.h / 2 + 300
-    );
+        "1 - Easy | Selection " + (levelComplete[0]?"✅":"❌"),
+        canvas.w / 2,
+        canvas.h / 2 + 150
+      );
       text(
-      "P - Minecraft " + (levelComplete[4]?"✅":"❌"),
-      canvas.w / 2,
-      canvas.h / 2 + 350
-    );
+        "2 - Medium | Iteration " + (levelComplete[1]?"✅":"❌"),
+        canvas.w / 2,
+        canvas.h / 2 + 200
+      );
+      text(
+        "3 - Hard | Functions & Lists " + (levelComplete[2]?"✅":"❌"),
+        canvas.w / 2,
+        canvas.h / 2 + 250
+      );
+      if(allComplete){
+        text(
+        "Q - K-Pop Demon Hunters " + (levelComplete[3]?"✅":"❌"),
+        canvas.w / 2,
+        canvas.h / 2 + 300
+      );
+        text(
+        "P - Minecraft " + (levelComplete[4]?"✅":"❌"),
+        canvas.w / 2,
+        canvas.h / 2 + 350
+      );
+      }
+    }
+    else{ //CSA
+      text(
+        "1 - Easy | Variables, Selection, String Methods " + (levelCompleteA[0]?"✅":"❌"),
+        canvas.w / 2,
+        canvas.h / 2 + 150
+      );
+      text(
+        "2 - Medium | Iteration (while loops & for loops) " + (levelCompleteA[1]?"✅":"❌"),
+        canvas.w / 2,
+        canvas.h / 2 + 200
+      );
+      text(
+        "3 - Hard | Arrays, ArrayList, 2d Arrays, Recursion " + (levelCompleteA[2]?"✅":"❌"),
+        canvas.w / 2,
+        canvas.h / 2 + 250
+      );
+      if(allComplete){
+        text(
+        "Q - K-Pop Demon Hunters " + (levelCompleteA[3]?"✅":"❌"),
+        canvas.w / 2,
+        canvas.h / 2 + 300
+      );
+        text(
+        "P - Minecraft " + (levelCompleteA[4]?"✅":"❌"),
+        canvas.w / 2,
+        canvas.h / 2 + 350
+      );
+      }
     }
     textStyle('normal');
     fill(150);
@@ -1555,12 +1613,19 @@ text(
     //player.vel.y=0;
     const isWin = (gameState === 'win');
 
-    if(isWin){
+    if(isWin && !csa){
       if(currentDifficulty==='easy') levelComplete[0] = true;
       if(currentDifficulty==='medium') levelComplete[1] = true;
       if(currentDifficulty==='hard') levelComplete[2] = true;
       if(currentDifficulty==='kpop') levelComplete[3] = true;
       if(currentDifficulty==='minecraft') levelComplete[4] = true;
+    }
+    if(isWin && csa){
+      if(currentDifficulty==='easy') levelCompleteA[0] = true;
+      if(currentDifficulty==='medium') levelCompleteA[1] = true;
+      if(currentDifficulty==='hard') levelCompleteA[2] = true;
+      if(currentDifficulty==='kpop') levelCompleteA[3] = true;
+      if(currentDifficulty==='minecraft') levelCompleteA[4] = true;
     }
     fill(0, 0, 0, 200);
     noStroke();
@@ -1751,7 +1816,8 @@ text(
     textStyle(BOLD);
     textAlign(CENTER, TOP);
     textSize(60);
-    let headerTxt = showPseudoSummary?"AP CSP Pseudocode":"Code Lens";
+    let currentMode = csa?"APCS-A Quick Reference Guide": "APCS-Principles Pseudocode"
+    let headerTxt = showPseudoSummary?currentMode:"Code Lens";
     text(headerTxt, canvas.w / 2, overlayY + 30);
     if (currentQuestion) {
       const qX = overlayX + 60;
@@ -1885,8 +1951,8 @@ text(
       const hintY = overlayY + overlayH - 80;
 
       const hintText = codeLensAnswered
-        ? "Press \'c\' to continue or 'i' to see AP CSP Pseudocode."
-        : "Press 1, 2, 3, or 4 to choose your fix or 'i' to see AP CSP Pseudocode.";
+        ? "Press \'c\' to continue or 'i' to see " + currentMode
+        : "Press 1, 2, 3, or 4 to choose your fix or 'i' to see " + currentMode;
 
       drawWrappedText(
         hintText,
@@ -2049,7 +2115,8 @@ text(
     textSize(36);
     textStyle(BOLD);
     textAlign(CENTER, TOP);
-    text("Press 'esc' to return " + loc + " or 'i' for AP CSP Pseudocode", canvas.w/2, canvas.h - 45);
+    let currentMode = csa?"APCS-A Quick Reference Guide": "APCS-Principles Pseudocode"
+    text("Press 'esc' to return " + loc + " or 'i' for " + currentMode, canvas.w/2, canvas.h - 45);
     if(loc !== "HOME"){
       world.active = true;
       allSprites.forEach(s => {
@@ -2125,7 +2192,9 @@ text(
     textStyle(BOLD);
     textAlign(CENTER, TOP);
     textSize(60);
-    let headerTxt = showPseudoSummary?"AP CSP Pseudocode":"Code Lens";
+    let currentMode = csa?"APCS-A Quick Reference Guide": "APCS-Principles Pseudocode"
+
+    let headerTxt = showPseudoSummary?currentMode:"Code Lens";
     text(headerTxt, canvas.w / 2, overlayY + 30);
 
     // ADD PSEUDOCODE
@@ -2147,58 +2216,116 @@ text(
         let rightY = qY;
 
         textAlign(LEFT, TOP);
-
+        let summaryLeft, summaryRight;
         // -------------------------
         // TWO-COLUMN CONTENT
         // -------------------------
+        if(!csa){
+          summaryLeft = [
+            { header: "VARIABLES:" },
+            "Use ← to assign values.",
+            "x ← 5",
+            "count ← count + 1",
 
-        const summaryLeft = [
-          { header: "VARIABLES:" },
-          "Use ← to assign values.",
-          "x ← 5",
-          "count ← count + 1",
+            "",
+            { header: "OPERATORS:" },
+            "+  -  *  /  MOD",
+            "=  ≠  >  <  ≥  ≤",
+            "AND   OR   NOT",
 
-          "",
-          { header: "OPERATORS:" },
-          "+  -  *  /  MOD",
-          "=  ≠  >  <  ≥  ≤",
-          "AND   OR   NOT",
+            "",
+            { header: "CONDITIONALS:" },
+            "IF (condition) { ... }",
+            "ELSE IF (condition) { ... }",
+            "ELSE { ... }",
 
-          "",
-          { header: "CONDITIONALS:" },
-          "IF (condition) { ... }",
-          "ELSE IF (condition) { ... }",
-          "ELSE { ... }",
+            "",
+            { header: "LOOPS:" },
+            "REPEAT n TIMES { ... }",
+            "REPEAT UNTIL (condition)",
+            "FOR EACH item IN list"
+          ];
 
-          "",
-          { header: "LOOPS:" },
-          "REPEAT n TIMES { ... }",
-          "REPEAT UNTIL (condition)",
-          "FOR EACH item IN list"
-        ];
+          summaryRight = [
+            { header: "LISTS (1-indexed):" },
+            "nums ← [2,4,6]",
+            "nums[1] // returns 2 (1st element)",
+            "LENGTH(nums) // returns 3",
+            "APPEND(nums, v) // adds v to end of list",
+            "INSERT(nums, i, v) // inserts v at index i",
+            "REMOVE(nums, i) // removes element at index i",
 
-        const summaryRight = [
-          { header: "LISTS (1-indexed):" },
-          "nums ← [2,4,6]",
-          "nums[1] // returns 2 (1st element)",
-          "LENGTH(nums) // returns 3",
-          "APPEND(nums, v) // adds v to end of list",
-          "INSERT(nums, i, v) // inserts v at index i",
-          "REMOVE(nums, i) // removes element at index i",
+            "",
+            { header: "STRINGS:" },
+            "\"Hi \" + name",
+            "LENGTH(word)",
+            "SUBSTRING(word, s, e)",
 
-          "",
-          { header: "STRINGS:" },
-          "\"Hi \" + name",
-          "LENGTH(word)",
-          "SUBSTRING(word, s, e)",
+            "",
+            { header: "PROCEDURES:" },
+            "PROCEDURE f(x) {",
+            "  RETURN x",
+            "}",
+            "result ← f(5)"
+          ];
+        }
+        else{ // CSA
+          // -------------------------
+// TWO-COLUMN CONTENT (AP CSA 2026)
+// Based on the Java Quick Reference
+// -------------------------
 
-          "",
-          { header: "PROCEDURES:" },
-          "PROCEDURE f(x) {",
-          "  RETURN x",
-          "}",
-          "result ← f(5)"
-        ];
+summaryLeft = [
+  { header: "STRING CLASS:" },
+  "String s = new String(\"hi\");",
+  "s.length()           // number of chars",
+  "s.substring(from, to) // [from, to-1]",
+  "s.substring(from)     // from to end",
+  "s.indexOf(str)        // first index or -1",
+  "s.equals(other)       // content equality",
+  "s.compareTo(other)    // <0, 0, >0 by alphabet",
+  "s.split(delim)        // String[] pieces",
+
+  "",
+  { header: "INTEGER & DOUBLE:" },
+  "Integer.MIN_VALUE / Integer.MAX_VALUE",
+  "Integer.parseInt(str)   // String → int",
+  "Double.parseDouble(str) // String → double",
+
+  "",
+  { header: "MATH CLASS:" },
+  "Math.abs(x)      // |x| (int/double)",
+  "Math.pow(b, e)   // b^e",
+  "Math.sqrt(x)     // √x (x ≥ 0)",
+  "Math.random()    // 0.0 ≤ x < 1.0"
+];
+
+summaryRight = [
+  { header: "ARRAYLIST<E>:" },
+  "list.size()            // number of elements",
+  "list.add(obj)          // append, returns true",
+  "list.add(i, obj)       // insert at i, shift right",
+  "list.get(i)            // element at index i",
+  "list.set(i, obj)       // replace, returns old",
+  "list.remove(i)         // remove, shift left, returns old",
+
+  "",
+  { header: "FILE & SCANNER:" },
+  "File f = new File(pathname);",
+  "Scanner in = new Scanner(f);",
+  "in.nextInt() / nextDouble() / nextBoolean()",
+  "in.nextLine()   // whole line (may be empty)",
+  "in.next()       // next token",
+  "in.hasNext()    // more data?",
+  "in.close();     // close scanner",
+
+  "",
+  { header: "OBJECT CLASS:" },
+  "obj.equals(other)  // custom equality",
+  "obj.toString()     // String form"
+];
+        }
+        //END REFERENCE GUIDE
 
         // Styles
         const headerSize = 30;
