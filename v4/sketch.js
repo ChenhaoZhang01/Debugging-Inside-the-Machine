@@ -1895,156 +1895,184 @@ text(
     let headerTxt = showPseudoSummary?currentMode:"Code Lens";
     text(headerTxt, canvas.w / 2, overlayY + 30);
     if (currentQuestion) {
-      const qX = overlayX + 60;
-      const qY = overlayY + 140;
-      const textBoxWidth = overlayW - 120;
+  const qX = overlayX + 60;
+  const qY = overlayY + 140;
+  const textBoxWidth = overlayW - 120;
 
-      textAlign(LEFT, TOP);
+  textAlign(LEFT, TOP);
 
-      // QUESTION AT THE TOP
-      textSize(40);
-      fill(0, 255, 0);
+  // QUESTION AT THE TOP
+  textSize(40);
+  fill(0, 255, 0);
 
-      let promptText = currentQuestion.prompt;
-      if(!QUESTION_NUMBERS){
-        promptText = currentQuestion.prompt.replace(/^.*?:\s*/, '');
-      }
-
-      let promptBottomY = drawWrappedText(
-        promptText,
-        qX,
-        qY,
-        textBoxWidth,
-        1.4
-      );
-
-      // TWO COLUMNS UNDER PROMPT
-      const gutter = 40;
-      const columnTopY = promptBottomY + 40;
-      const columnWidth = (textBoxWidth - gutter) / 2;
-
-      const codeX = qX;
-      const choicesX = qX + columnWidth + gutter;
-
-      // CODE BLOCK (LEFT COLUMN)
-      textStyle('normal')
-      textSize(24);
-      fill(200, 255, 200);
-
-      const codeLines = currentQuestion.code.split('\n');
-      let codeY = columnTopY;
-      let indentLevel = 0;
-      const indentSize = 40;
-      const baseX = codeX + 40;
-
-      for (let i = 0; i < codeLines.length; i++) {
-        let line = codeLines[i].trim();
-
-        if (line.startsWith('}')) {
-          indentLevel = Math.max(0, indentLevel - 1);
-        }
-
-        const x = baseX + indentLevel * indentSize;
-
-        codeY = drawWrappedText(line, x, codeY, columnWidth, 1.5);
-
-        if (line.endsWith('{')) {
-          indentLevel++;
-        }
-
-        codeY += 8;
-      }
-
-      const codeBottomY = codeY;
-
-      // ANSWER CHOICES (RIGHT COLUMN)
-      textSize(28);
-
-      const labels = ['1', '2', '3', '4'];
-      let choicesY = columnTopY;
-
-      const answersToShow =
-        currentShuffledAnswers && currentShuffledAnswers.length === 4
-          ? currentShuffledAnswers
-          : currentQuestion.choices;
-
-      for (let i = 0; i < answersToShow.length; i++) {
-        const label = labels[i] || (i + 1) + '.';
-        const optionText = label + '. ' + answersToShow[i];
-
-        const optionNumber = i + 1;
-        const isCorrect = (optionNumber === currentCorrectAnswerNumber);
-        const isPlayerChoice = (codeLensPlayerChoice === optionNumber);
-
-        // Color based on correctness / choice once answered
-        if (codeLensAnswered) {
-          if (isCorrect) {
-            if(!correctSoundPlaying && isPlayerChoice){
-              correctSound.play();
-              correctSoundPlaying = true;
-            }
-            textStyle('bold');
-            fill(0, 255, 0); // green for correct
-          } else if (isPlayerChoice && !isCorrect) {
-            if(!wrongSoundPlaying){
-              wrongSound.play();
-              wrongSoundPlaying = true;
-            }
-          
-            textStyle('normal');
-            fill(255, 80, 80); // red for wrong chosen answer
-          } else {
-            textStyle('normal');
-            fill(180); // dim others
-          }
-        } else {
-          textStyle('bold');
-          fill(255); // before answering
-        }
-
-        const choiceTopY = choicesY;
-        choicesY = drawWrappedText(optionText, choicesX, choicesY, columnWidth, 1.4);
-        choicesY += 50;
-
-        // Strikethrough for incorrect chosen answer
-        // if (codeLensAnswered && isPlayerChoice && !isCorrect) {
-        //   stroke(255, 80, 80);
-        //   strokeWeight(2);
-        //   const lh = textSize() * 1.4;
-        //   const midY = choiceTopY + lh * 0.5;
-        //   line(choicesX, midY-5, choicesX + columnWidth, midY-5);
-        //   noStroke();
-        // }
-      }
-
-      const choicesBottomY = choicesY;
-      const contentBottomY = Math.max(codeBottomY, choicesBottomY);
-
-      // HINT SECTION
-      fill(200);
-      textSize(30);
-      const hintY = overlayY + overlayH - 80;
-
-      const hintText = codeLensAnswered
-        ? "Press \'c\' to continue or 'i' to see " + currentMode
-        : "Press 1, 2, 3, or 4 to choose your fix or 'i' to see " + currentMode;
-
-      drawWrappedText(
-        hintText,
-        qX,
-        hintY,
-        textBoxWidth,
-        1.2
-      );
-    } else {
-      // If questions not ready but somehow paused
-      fill(200);
-      textSize(32);
-      textAlign(CENTER, CENTER);
-      text("Questions not loaded yet.", canvas.w / 2, canvas.h / 2);
-    }
+  let promptText = currentQuestion.prompt;
+  if (!QUESTION_NUMBERS) {
+    promptText = currentQuestion.prompt.replace(/^.*?:\s*/, '');
   }
 
+  const promptBottomY = drawWrappedText(
+    promptText,
+    qX,
+    qY,
+    textBoxWidth,
+    1.4
+  );
+
+  // TWO COLUMNS UNDER PROMPT
+  const gutter = 40;
+  const columnTopY = promptBottomY + 40;
+  const columnWidth = (textBoxWidth - gutter) / 2;
+
+  const codeX    = qX;
+  const choicesX = qX + columnWidth + gutter;
+
+  // ============================
+  // CODE BLOCK (LEFT COLUMN)
+  // ============================
+  textStyle('normal');
+  textSize(26);
+  fill(200, 255, 200);
+
+  const codeLines   = currentQuestion.code.split('\n');
+  let codeY         = columnTopY;
+  let codeIndent    = 0;
+  const codeIndentSize = 40;
+  const codeBaseX   = codeX + 40;
+
+  for (let i = 0; i < codeLines.length; i++) {
+    let line = codeLines[i].trim();
+
+    if (line.startsWith('}')) {
+      codeIndent = Math.max(0, codeIndent - 1);
+    }
+
+    const x = codeBaseX + codeIndent * codeIndentSize;
+
+    codeY = drawWrappedText(line, x, codeY, columnWidth, 1.5);
+
+    if (line.endsWith('{')) {
+      codeIndent++;
+    }
+
+    codeY += 8;
+  }
+
+  const codeBottomY = codeY;
+
+  // ANSWER CHOICES (RIGHT COLUMN)
+textSize(24);
+textAlign(LEFT, TOP);
+
+const labels = ['1', '2', '3', '4'];
+let choicesY = columnTopY;
+
+const maxAnswerWidth = columnWidth;  // keep within the right column
+const lineHeight     = 55;           // vertical spacing per line
+const optionGap      = 32;           // extra space *between answers*
+
+const answersToShow =
+  currentShuffledAnswers && currentShuffledAnswers.length === 4
+    ? currentShuffledAnswers
+    : currentQuestion.choices;
+
+for (let i = 0; i < answersToShow.length; i++) {
+  const label      = labels[i] || (i + 1) + '.';
+  const optionText = label + '. ' + answersToShow[i];
+
+  const optionNumber   = i + 1;
+  const isCorrect      = (optionNumber === currentCorrectAnswerNumber);
+  const isPlayerChoice = (codeLensPlayerChoice === optionNumber);
+
+  // --- WORD WRAP THIS ANSWER ---
+  const words   = optionText.split(' ');
+  let   line    = '';
+  const wrapped = [];
+
+  for (let w = 0; w < words.length; w++) {
+    const testLine = line.length > 0 ? line + ' ' + words[w] : words[w];
+    if (textWidth(testLine) > maxAnswerWidth) {
+      wrapped.push(line);
+      line = words[w];
+    } else {
+      line = testLine;
+    }
+  }
+  if (line.length > 0) {
+    wrapped.push(line);
+  }
+
+  // --- COLORING LOGIC ---
+  if (codeLensAnswered) {
+    if (isCorrect) {
+      if (!correctSoundPlaying && isPlayerChoice) {
+        correctSound.play();
+        correctSoundPlaying = true;
+      }
+      textStyle('bold');
+      fill(0, 255, 0);     // green for correct
+    } else if (isPlayerChoice) {
+      if (!wrongSoundPlaying) {
+        wrongSound.play();
+        wrongSoundPlaying = true;
+      }
+      textStyle('normal');
+      fill(255, 80, 80);   // red for chosen wrong
+    } else {
+      textStyle('normal');
+      fill(180);           // dim others
+    }
+  } else {
+    textStyle('bold');
+    fill(255);             // before answering
+  }
+
+  // --- DRAW THIS ANSWER BLOCK ---
+  const blockTopY = choicesY;      // start of this answer block
+  const answerX   = choicesX;      // right column X
+
+  for (let j = 0; j < wrapped.length; j++) {
+    text(wrapped[j], answerX, blockTopY + j * lineHeight);
+  }
+
+  // After drawing ALL lines for this answer, move choicesY down
+  const blockHeight = wrapped.length * lineHeight;
+  choicesY = blockTopY + blockHeight + optionGap;
+}
+
+const choicesBottomY = choicesY;
+const contentBottomY = Math.max(codeBottomY, choicesBottomY);
+
+
+
+
+  // ============================
+  // HINT SECTION
+  // ============================
+  fill(200);
+  textSize(30);
+  const hintY = overlayY + overlayH - 80;
+
+  const hintText = codeLensAnswered
+    ? "Press 'c' to continue or 'i' to see " + currentMode
+    : "Press 1, 2, 3, or 4 to choose your fix or 'i' to see " + currentMode;
+
+  drawWrappedText(
+    hintText,
+    qX,
+    hintY,
+    textBoxWidth,
+    1.2
+  );
+
+} else {
+  // If questions not ready but somehow paused
+  fill(200);
+  textSize(32);
+  textAlign(CENTER, CENTER);
+  text("Questions not loaded yet.", canvas.w / 2, canvas.h / 2);
+}
+
+  }
   if (damageFlashTimer > 0) {
     damageFlashTimer -= deltaTime;
     if (damageFlashTimer < 0) damageFlashTimer = 0;
