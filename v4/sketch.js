@@ -1966,9 +1966,9 @@ textAlign(LEFT, TOP);
 const labels = ['1', '2', '3', '4'];
 let choicesY = columnTopY;
 
-const maxAnswerWidth = columnWidth;  // keep within the right column
-const lineHeight     = 55;           // vertical spacing per line
-const optionGap      = 32;           // extra space *between answers*
+const maxAnswerWidth = columnWidth;  // width of the right column
+const lineHeight     = 30;
+const optionGap      = 32;
 
 const answersToShow =
   currentShuffledAnswers && currentShuffledAnswers.length === 4
@@ -1976,32 +1976,47 @@ const answersToShow =
     : currentQuestion.choices;
 
 for (let i = 0; i < answersToShow.length; i++) {
-  const label      = labels[i] || (i + 1) + '.';
-  const optionText = label + '. ' + answersToShow[i];
+  const label        = labels[i] || (i + 1) + '.';
+  const labelText    = label + '. ';
+  const labelWidth   = textWidth(labelText);         // how wide "1. " is
+  const textX        = choicesX + labelWidth;        // start of the answer text
+  const widthLimit   = maxAnswerWidth - labelWidth;  // usable width for wrapping
 
   const optionNumber   = i + 1;
   const isCorrect      = (optionNumber === currentCorrectAnswerNumber);
   const isPlayerChoice = (codeLensPlayerChoice === optionNumber);
 
-  // --- WORD WRAP THIS ANSWER ---
-  const words   = optionText.split(' ');
-  let   line    = '';
-  const wrapped = [];
+  // --- split the *answer text* (no label) into logical lines ---
+  const logicalLines = String(answersToShow[i]).split('\n');
+  const wrappedLines = [];
 
-  for (let w = 0; w < words.length; w++) {
-    const testLine = line.length > 0 ? line + ' ' + words[w] : words[w];
-    if (textWidth(testLine) > maxAnswerWidth) {
-      wrapped.push(line);
-      line = words[w];
-    } else {
-      line = testLine;
+  for (let li = 0; li < logicalLines.length; li++) {
+    const rawLine = logicalLines[li];
+
+    if (rawLine.length === 0) {
+      // preserve blank line
+      wrappedLines.push('');
+      continue;
+    }
+
+    const words = rawLine.split(' ');
+    let line = '';
+
+    for (let w = 0; w < words.length; w++) {
+      const testLine = line.length > 0 ? line + ' ' + words[w] : words[w];
+      if (textWidth(testLine) > widthLimit) {
+        wrappedLines.push(line);
+        line = words[w];
+      } else {
+        line = testLine;
+      }
+    }
+    if (line.length > 0) {
+      wrappedLines.push(line);
     }
   }
-  if (line.length > 0) {
-    wrapped.push(line);
-  }
 
-  // --- COLORING LOGIC ---
+  // --- coloring logic ---
   if (codeLensAnswered) {
     if (isCorrect) {
       if (!correctSoundPlaying && isPlayerChoice) {
@@ -2009,38 +2024,41 @@ for (let i = 0; i < answersToShow.length; i++) {
         correctSoundPlaying = true;
       }
       textStyle('bold');
-      fill(0, 255, 0);     // green for correct
+      fill(0, 255, 0);
     } else if (isPlayerChoice) {
       if (!wrongSoundPlaying) {
         wrongSound.play();
         wrongSoundPlaying = true;
       }
       textStyle('normal');
-      fill(255, 80, 80);   // red for chosen wrong
+      fill(255, 80, 80);
     } else {
       textStyle('normal');
-      fill(180);           // dim others
+      fill(180);
     }
   } else {
     textStyle('bold');
-    fill(255);             // before answering
+    fill(255);
   }
 
-  // --- DRAW THIS ANSWER BLOCK ---
-  const blockTopY = choicesY;      // start of this answer block
-  const answerX   = choicesX;      // right column X
+  const blockTopY = choicesY;
 
-  for (let j = 0; j < wrapped.length; j++) {
-    text(wrapped[j], answerX, blockTopY + j * lineHeight);
+  // draw label once at the top of the block
+  text(labelText, choicesX, blockTopY);
+
+  // draw each wrapped line aligned after the label
+  for (let j = 0; j < wrappedLines.length; j++) {
+    text(wrappedLines[j], textX, blockTopY + j * lineHeight);
   }
 
-  // After drawing ALL lines for this answer, move choicesY down
-  const blockHeight = wrapped.length * lineHeight;
+  // move Y down by the full height of this answer block plus gap
+  const blockHeight = wrappedLines.length * lineHeight;
   choicesY = blockTopY + blockHeight + optionGap;
 }
 
 const choicesBottomY = choicesY;
 const contentBottomY = Math.max(codeBottomY, choicesBottomY);
+
 
 
 
