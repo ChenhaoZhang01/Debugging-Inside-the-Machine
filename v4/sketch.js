@@ -1089,6 +1089,7 @@ function update() {
       // resetBoard();
       selectSound.play()
       gameState = 'start';
+      loc = "HOME"
       player.x = playerStartX;
       player.y = playerStartY;
       camera.x = player.x;
