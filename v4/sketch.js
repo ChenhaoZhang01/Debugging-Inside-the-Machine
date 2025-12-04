@@ -885,8 +885,8 @@ function update() {
     if (kb.presses('1')) {setDifficulty('easy');selectSound.play()}
     if (kb.presses('2')) {setDifficulty('medium');selectSound.play()}
     if (kb.presses('3')) {setDifficulty('hard');selectSound.play()}
-    if (allComplete && kb.presses('q')) {setDifficulty('kpop');selectSound.play()}
-    if (allComplete && kb.presses('p')) {setDifficulty('minecraft');selectSound.play()}
+    if ((allComplete || allCompleteA) && kb.presses('q')) {setDifficulty('kpop');selectSound.play()}
+    if ((allComplete || allCompleteA) && kb.presses('p')) {setDifficulty('minecraft');selectSound.play()}
 
     if (kb.presses('enter')) {
       bgMusic.loop();
@@ -1416,7 +1416,7 @@ rect(0, 0, canvas.w, canvas.h);
 const allComplete = levelComplete.slice(0, 3).every(v => v === true);
 const allCompleteA = levelCompleteA.slice(0, 3).every(v => v === true);
 
-if (allComplete) {
+if (allComplete || allCompleteA) {
   // GOLD skin if all complete
   player.spriteSheet = goldMonsterImg;
   for (const name in player.anis) {
@@ -1495,7 +1495,7 @@ textAlign(CENTER, CENTER);
 textStyle(BOLD);
 textSize(80);
 let mainTitleOffset = 350
-if (allComplete) {
+if (allComplete || allCompleteA) {
   // slower shimmer effect
   const shimmerOffset = sin(frameCount * 0.01) * 4;
   const sparkle = random(220, 255);
@@ -1528,7 +1528,7 @@ if (allComplete) {
 
 // Subtitle
 textSize(40);
-if (allComplete) {
+if (allComplete || allCompleteA) {
   fill(220); // slightly brighter when gold is active
 } else {
   fill(155, 155, 155); // your original gray
@@ -1608,7 +1608,7 @@ text(
         canvas.w / 2,
         canvas.h / 2 + 250
       );
-      if(allComplete){
+      if(allComplete || allCompleteA){
         text(
         "Q - K-Pop Demon Hunters " + (levelComplete[3]?"✅":"❌"),
         canvas.w / 2,
@@ -1637,7 +1637,7 @@ text(
         canvas.w / 2,
         canvas.h / 2 + 250
       );
-      if(allComplete){
+      if(allComplete || allCompleteA){
         text(
         "Q - K-Pop Demon Hunters " + (levelCompleteA[3]?"✅":"❌"),
         canvas.w / 2,
@@ -1670,7 +1670,7 @@ text(
       fill(255,0,0);
       text("DEBUGGING", canvas.w-160, 30)
     }
-    if(allComplete){
+    if(allComplete || allCompleteA){
       textSize(30);
       fill(255,255,0)
       text(
